@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "Node16", // Usa CommonJS invece di ESNext
+    "target": "ESNext",
+    "moduleResolution": "node16",
+    "esModuleInterop": true,
+    "strict": true,
+    "types": ["jest", "node"],
+    "outDir": "./dist",
+    "rootDir": "./",
+    "resolveJsonModule": true
+  },
+  "include": ["**/*.ts"]
+}

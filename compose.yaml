@@ -1,0 +1,47 @@
+name: ${PROJECT_NAME:-Mountain-Hut-prod}
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin}
+      POSTGRES_DB: ${DB_NAME:-admin}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./backend/connections/PostgreSQL/seed/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./backend/connections/PostgreSQL/seed/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ${DOCKER_USER:-mountainhut}/mountain-hut-backend:${TAG:-latest}
+    build: ./backend
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    environment:
+      DB_USER: ${DB_USER:-admin}
+      DB_PASSWORD: ${DB_PASSWORD:-admin}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-admin}
+      JWT_SECRET: ${JWT_SECRET:-supersecretjwtkey_change_in_production}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: ${DOCKER_USER:-mountainhut}/mountain-hut-frontend:${TAG:-latest}
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+
+volumes:
+  db_data:
