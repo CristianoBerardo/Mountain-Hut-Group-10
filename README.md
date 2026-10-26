@@ -1,5 +1,7 @@
 # Mountain Hut - Group 10
 
+#### License
+The GNU GPL v3.0 was selected for its commitment to software freedom, transparency, and collaboration. Its copyleft provisions ensure that distributed derivative works remain subject to the same licensing terms, preserving users’ rights to use, modify, and redistribute the software.
 
 #### Prerequisites
 
