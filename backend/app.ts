@@ -41,10 +41,10 @@ if (require.main === module) {
   app.listen(PORT, async () => {
     console.log(`Backend server is running on port ${PORT}...`);
     await startServer();
+    // At server start, generate a test token to verify firebase connection
+    await testFirebaseAuth();
   });
 }
-
-testFirebaseAuth();
 
 
 export default app;

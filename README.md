@@ -309,13 +309,8 @@ To verify the Firebase Admin configuration:
 
 1. Confirm that the service account JSON file exists at the configured path
 2. Confirm that `GOOGLE_APPLICATION_CREDENTIALS` is loaded correctly
-3. From the `backend/` directory, compile the backend TypeScript files:
-   ```bash
-   npx tsc
-   ```
-4. Run the existing FIrebase Admin test, if available
-   `    node dist/test-auth.js`
-   A successful `createCustomToken()` test confirms that the SDK can perform that operation with the configured credentials. It does not, by itself, verify frontend login or the complete ID-token verification flow.
+
+The Firebase Admin SDK test runs automatically when `npm run dev` is launched, after the PostgreSQL initialization completes. It verifies that Firebase Admin can successfully generate a custom authentication token.
 
 ### Google Cloud IAM Configuration
 
