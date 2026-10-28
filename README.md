@@ -1,31 +1,29 @@
 # Mountain Hut - Group 10
 
-#### License
+## License
 
 The GNU GPL v3.0 was selected for its commitment to software freedom, transparency, and collaboration. Its copyleft provisions ensure that distributed derivative works remain subject to the same licensing terms, preserving users’ rights to use, modify, and redistribute the software.
 
-#### Prerequisites
+## Prerequisites
 
 Ensure you have the following installed on your machine:
 
 - [Node.js](https://nodejs.org/) (v20.x or v22.x LTS recommended)
 - [npm](https://www.npmjs.com/) (v10.x or higher)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (must be running)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (**must be running**)
 - [Git](https://git-scm.com/)
 
 ---
 
-#### Environment Configuration
+## Local Development
 
-In the root directory, copy the example environment file to initialize your configuration (the root `.env` serves as the **Single Source of Truth** for the entire project, including backend and Docker Compose):
+### 0. Environment Configuration
+
+In the root directory, copy the example environment file to initialize your configuration
 
 ```bash
 cp .env.example .env
 ```
-
----
-
-## Local Development
 
 ### 1. Install All Dependencies
 
@@ -53,20 +51,27 @@ npm run dev
 
 If you only want to work on a specific part of the system:
 
+#### Start backend only (automatically boots PostgreSQL first)
+
 ```bash
-## Start backend only (automatically boots PostgreSQL first)
 npm run dev:backend
+```
 
-## Start frontend only
+#### Start frontend only
+
+```bash
 npm run dev:frontend
+```
 
-## Format all code with Prettier
+#### Format all code with Prettier
+
+```bash
 npm run format
 ```
 
 ---
 
-## Database Management & Adminer
+### Database Management & Adminer
 
 The PostgreSQL development database lifecycle can be controlled with dedicated npm scripts:
 
@@ -76,7 +81,7 @@ The PostgreSQL development database lifecycle can be controlled with dedicated n
 | `npm run docker:db:down` | Stops and removes the local database containers                     |
 | `npm run docker:db:logs` | Streams real-time database logs to your terminal                    |
 
-### Resetting the Database
+#### Resetting the Database
 
 To clear all data and re-run the seed scripts (`seed/init.sql` and `seed/seed.sql`):
 
@@ -85,7 +90,7 @@ docker compose -f backend/connections/PostgreSQL/compose.yaml down -v
 npm run docker:db:up
 ```
 
-### Accessing the Adminer Web UI
+#### Accessing the Adminer Web UI
 
 Navigate to [http://localhost:8080](http://localhost:8080) in your browser:
 
@@ -345,16 +350,19 @@ The React frontend uses the Firebase JavaScript SDK to authenticate users.
 
 Copy the Firebase configuration into:
 
-```
-/frontend/src/config/firebase.js
+```path
+/frontend/src/config/firebase.ts
 ```
 
 Before using it, replace the hardcoded configuration values with the corresponding Vite environment variables.
 
 Create a `.env.local` file in the `frontend/` directory and configure the following variables using the values from your Firebase Web App configuration:
 
-```
-VITE_FIREBASE_API_KEY=your_firebase_api_key VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com VITE_FIREBASE_PROJECT_ID=your_project_id VITE_FIREBASE_APP_ID=your_firebase_app_id
+```text
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_APP_ID=your_firebase_app_id
 ```
 
 Replace the example values with the actual configuration values for the Firebase Web App.
