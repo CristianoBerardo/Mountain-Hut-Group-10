@@ -2,7 +2,7 @@
 import { adminAuth } from "./config/firebaseAdmin";
 
 // Test whether Firebase Admin SDK can generate a custom token.
-async function testFirebaseAuth() {
+export async function testFirebaseAuth() {
   try {
     // Generate a custom token for a test UID.
     // This does not create a Firebase Authentication user.
