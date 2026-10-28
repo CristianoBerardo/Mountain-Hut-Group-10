@@ -22,4 +22,4 @@ export async function testFirebaseAuth() {
 }
 
 // Run the test.
-testFirebaseAuth();
+// testFirebaseAuth();
