@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes";
 import statsRoutes from "./routes/statsRoutes";
 import ticketRoutes from "./routes/ticketRoutes";
 import userRoutes from "./routes/userRoutes";
+import { testFirebaseAuth } from "./test-auth";
 
 // Carica il file .env dalla root del progetto (Single Source of Truth)
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -42,5 +43,8 @@ if (require.main === module) {
     await startServer();
   });
 }
+
+testFirebaseAuth();
+
 
 export default app;
