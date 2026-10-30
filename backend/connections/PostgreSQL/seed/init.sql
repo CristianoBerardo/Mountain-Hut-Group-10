@@ -16,8 +16,6 @@ CREATE TABLE IF NOT EXISTS "user" (
     role TEXT NOT NULL
 );
 
-CREATE EXTENSION IF NOT EXISTS btree_gist;
-
 CREATE TABLE IF NOT EXISTS dining_table (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     table_number SMALLINT NOT NULL UNIQUE CHECK (table_number > 0),
@@ -28,21 +26,25 @@ CREATE TABLE IF NOT EXISTS dining_table (
 CREATE TABLE IF NOT EXISTS meal_reservation (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     hiker_id UUID NOT NULL REFERENCES "user"(id) ON DELETE RESTRICT,
-    dining_table_id UUID NOT NULL REFERENCES dining_table(id) ON DELETE RESTRICT,
     starts_at TIMESTAMPTZ NOT NULL,
     ends_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT meal_reservation_end_after_start CHECK (ends_at > starts_at),
     party_size SMALLINT NOT NULL CHECK (party_size > 0),
     status TEXT NOT NULL DEFAULT 'CONFIRMED'
         CHECK (status IN ('CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT meal_reservation_no_table_overlap
-        EXCLUDE USING gist (
-            dining_table_id WITH =,
-            (tstzrange(starts_at, ends_at, '[)')) WITH &&
-        )
-        WHERE (status = 'CONFIRMED')
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS reservation_table (
+    reservation_id UUID NOT NULL
+        REFERENCES meal_reservation(id) ON DELETE RESTRICT,
+    dining_table_id UUID NOT NULL
+        REFERENCES dining_table(id) ON DELETE RESTRICT,
+    PRIMARY KEY (reservation_id, dining_table_id)
 );
 
 CREATE INDEX IF NOT EXISTS meal_reservation_hiker_starts_at_idx
     ON meal_reservation (hiker_id, starts_at);
+
+CREATE INDEX IF NOT EXISTS reservation_table_dining_table_id_idx
+    ON reservation_table (dining_table_id);

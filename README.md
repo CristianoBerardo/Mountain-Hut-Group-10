@@ -84,7 +84,9 @@ Navigate to [http://localhost:8080](http://localhost:8080) in your browser:
 
 ### Meal Reservations
 
-The local database includes `dining_table` and `meal_reservation` tables. A reservation belongs to a PostgreSQL user and one dining table; each table has a capacity, and confirmed reservations cannot overlap on the same table. Reservation start and end times are stored as `TIMESTAMPTZ`; the application can use a default duration of 120 minutes when calculating the end time. The sample data creates five tables with capacities from two to six people.
+The local database includes `dining_table`, `meal_reservation`, and `reservation_table` tables. A reservation belongs to a PostgreSQL user and can use one or more dining tables through `reservation_table`, allowing tables to be joined for larger parties. Reservation start and end times are stored as `TIMESTAMPTZ`; the application can use a default duration of 120 minutes when calculating the end time. The sample data creates five tables with capacities from two to six people.
+
+When creating a reservation, the backend must choose active tables whose combined capacity is at least the party size and ensure none is already reserved during the requested interval. It should perform the availability check and insert the reservation and all table assignments in one transaction, locking the selected table rows in a consistent order to prevent simultaneous bookings from claiming the same tables.
 
 ---
 
