@@ -82,6 +82,10 @@ Navigate to [http://localhost:8080](http://localhost:8080) in your browser:
 - **Password**: `admin`
 - **Database**: `admin`
 
+### Meal Reservations
+
+The local database includes `dining_table` and `meal_reservation` tables. A reservation belongs to a PostgreSQL user and one dining table; each table has a capacity, and confirmed reservations cannot overlap on the same table. Reservation start and end times are stored as `TIMESTAMPTZ`; the application can use a default duration of 120 minutes when calculating the end time. The sample data creates five tables with capacities from two to six people.
+
 ---
 
 # Building & Publishing to Docker Hub (Optional but if you want to try the experience with your own Docker Hub account)
