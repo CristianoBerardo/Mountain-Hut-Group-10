@@ -5,6 +5,7 @@ import path from "path";
 import { startServer } from "./connections/PostgreSQL/database";
 import authRoutes from "./routes/authRoutes";
 import statsRoutes from "./routes/statsRoutes";
+import tableRoutes from "./routes/tableRoutes";
 import ticketRoutes from "./routes/ticketRoutes";
 import userRoutes from "./routes/userRoutes";
 import { testFirebaseAuth } from "./test-auth";
@@ -20,6 +21,7 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/stats", statsRoutes);
+app.use("/api/v1/tables", tableRoutes);
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -36,7 +38,6 @@ app.get("/api/health", (_req, res) => {
 //  await startServer();
 //});
 
-
 if (require.main === module) {
   app.listen(PORT, async () => {
     console.log(`Backend server is running on port ${PORT}...`);
@@ -45,6 +46,5 @@ if (require.main === module) {
     await testFirebaseAuth();
   });
 }
-
 
 export default app;
