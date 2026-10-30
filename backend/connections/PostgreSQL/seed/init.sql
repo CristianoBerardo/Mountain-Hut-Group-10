@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS reservation_table (
         REFERENCES meal_reservation(id) ON DELETE RESTRICT,
     dining_table_id UUID NOT NULL
         REFERENCES dining_table(id) ON DELETE RESTRICT,
+    seats_assigned SMALLINT NOT NULL CHECK (seats_assigned > 0),
     PRIMARY KEY (reservation_id, dining_table_id)
 );
 
