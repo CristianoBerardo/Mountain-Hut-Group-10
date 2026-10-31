@@ -19,6 +19,8 @@ In the root directory, copy the example environment file to initialize your conf
 cp .env.example .env
 ```
 
+> **FOR MAC USER**: Open the `.env` file and replace "\" with "/"
+
 #### Firebase backend configuration
 
 Save the JSON file `mountain-hut-group-10-firebase.json` into the directory: `./backend/secrets` (downloaded from out telegram group)
