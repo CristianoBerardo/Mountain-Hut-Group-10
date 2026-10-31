@@ -21,6 +21,8 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/stats", statsRoutes);
+
+
 app.use("/api/v1/tables", tableRoutes);
 
 const PORT = Number(process.env.PORT) || 3000;

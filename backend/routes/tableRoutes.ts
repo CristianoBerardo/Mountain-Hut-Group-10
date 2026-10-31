@@ -1,8 +1,23 @@
 import { Router } from "express";
-import { getAllTables } from "../controllers/tableController";
+import {
+  createTable,
+  deleteTable,
+  getTableById,
+  getTableByTableNumber,
+  getTables,
+  updateTable,
+} from "../controllers/tableController";
 
 const router = Router();
 
-router.get("/", getAllTables);
+router.get("/", getTables);
+router.get("/:id", getTableById);
+router.get("/number/:table_number ", getTableByTableNumber);
+
+router.post("/", createTable);
+
+router.patch("/:id", updateTable);
+
+router.delete("/:id", deleteTable);
 
 export default router;
