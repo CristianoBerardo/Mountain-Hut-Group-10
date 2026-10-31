@@ -5,6 +5,7 @@ import {
   getTableById,
   getTableByTableNumber,
   getTables,
+  resetTableOccupancy,
   updateTable,
 } from "../controllers/tableController";
 
@@ -12,7 +13,8 @@ const router = Router();
 
 router.get("/", getTables);
 router.get("/:id", getTableById);
-router.get("/number/:table_number ", getTableByTableNumber);
+router.get("/number/:table_number", getTableByTableNumber);
+router.patch("/:id/reset", resetTableOccupancy);
 
 router.post("/", createTable);
 

@@ -2,13 +2,28 @@ import { Request, Response } from "express";
 import { pool } from "../connections/PostgreSQL/database";
 import { DiningTable } from "../models/DiningTable";
 
+// GET + filters ?active=true&available=true
 export async function getTables(req: Request, res: Response) {
   try {
-    const result = await pool.query(`SELECT * FROM dining_table`);
+    const { active, available } = req.query;
+    let query = `SELECT * FROM dining_table WHERE 1=1`;
+    const params: any[] = [];
 
+    if (active !== undefined) {
+      params.push(active === "true");
+      query += ` AND is_active = $${params.length}`;
+    }
+
+    if (available === "true") {
+      query += ` AND occupancy < capacity`;
+    }
+
+    query += ` ORDER BY table_number ASC`;
+
+    const result = await pool.query(query, params);
     res.status(200).json(result.rows);
   } catch (error) {
-    console.error("Error retrieving tickets:", error);
+    console.error("Error retrieving tables:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
@@ -16,9 +31,6 @@ export async function getTables(req: Request, res: Response) {
 export async function getTableById(req: Request, res: Response) {
   try {
     const { id } = req.params;
-
-    console.log("Received request for table with ID:", req.params);
-
     const result = await pool.query(
       `SELECT * FROM dining_table WHERE id = $1`,
       [id],
@@ -70,7 +82,25 @@ export async function getTableByTableNumber(req: Request, res: Response) {
 // ! Attention needed, does it make sense to have UUID ad a PK and table_number as a unique field?
 export async function createTable(req: Request, res: Response) {
   try {
-    const table: Omit<DiningTable, "id"> = req.body;
+    const table: Omit<DiningTable, "id"> = {
+      ...req.body,
+      table_number: req.body.table_number ?? req.body.tableNumber,
+      capacity: req.body.capacity,
+      occupancy: req.body.occupancy ?? 0,
+      is_active: req.body.is_active ?? req.body.isActive ?? true,
+    };
+
+    if (!table.table_number || !table.capacity) {
+      res.status(400).json({ error: "table_number and capacity are required" });
+      return;
+    }
+
+    if (table.occupancy > table.capacity) {
+      res
+        .status(400)
+        .json({ error: "occupancy cannot be greater than capacity" });
+      return;
+    }
 
     if (await checkTableExists(table.table_number)) {
       res.status(409).json({ error: "Table number already exists" });
@@ -93,7 +123,26 @@ export async function createTable(req: Request, res: Response) {
 export async function updateTable(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const table: Partial<Omit<DiningTable, "id">> = req.body;
+
+    const table: Omit<DiningTable, "id"> = {
+      ...req.body,
+      table_number: req.body.table_number ?? req.body.tableNumber,
+      capacity: req.body.capacity,
+      occupancy: req.body.occupancy ?? 0,
+      is_active: req.body.is_active ?? req.body.isActive ?? true,
+    };
+
+    if (!table.table_number || !table.capacity) {
+      res.status(400).json({ error: "table_number and capacity are required" });
+      return;
+    }
+
+    if (table.occupancy > table.capacity) {
+      res
+        .status(400)
+        .json({ error: "occupancy cannot be greater than capacity" });
+      return;
+    }
 
     if (table.table_number && (await checkTableExists(table.table_number))) {
       res.status(409).json({ error: "Table number already exists" });
@@ -101,10 +150,11 @@ export async function updateTable(req: Request, res: Response) {
     }
 
     const result = await pool.query(
-      `UPDATE dining_table SET table_number = COALESCE($1, table_number),
-       capacity = COALESCE($2, capacity),
-       occupancy = COALESCE($3, occupancy),
-       is_active = COALESCE($4, is_active)
+      `UPDATE dining_table SET 
+        table_number = COALESCE($1, table_number),
+        capacity = COALESCE($2, capacity),
+        occupancy = COALESCE($3, occupancy),
+        is_active = COALESCE($4, is_active)
        WHERE id = $5 RETURNING *`,
       [
         table.table_number,
@@ -123,6 +173,26 @@ export async function updateTable(req: Request, res: Response) {
     res.status(200).json(result.rows[0]);
   } catch (error) {
     console.error("Error updating table:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function resetTableOccupancy(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `UPDATE dining_table SET occupancy = 0 WHERE id = $1 RETURNING *`,
+      [id],
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: "Table not found" });
+      return;
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error("Error resetting table occupancy:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }
