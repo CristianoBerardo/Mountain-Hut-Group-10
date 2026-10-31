@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes";
 import statsRoutes from "./routes/statsRoutes";
 import ticketRoutes from "./routes/ticketRoutes";
 import userRoutes from "./routes/userRoutes";
+import { testFirebaseAuth } from "./test-auth";
 
 // Carica il file .env dalla root del progetto (Single Source of Truth)
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -40,7 +41,10 @@ if (require.main === module) {
   app.listen(PORT, async () => {
     console.log(`Backend server is running on port ${PORT}...`);
     await startServer();
+    // At server start, generate a test token to verify firebase connection
+    await testFirebaseAuth();
   });
 }
+
 
 export default app;

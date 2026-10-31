@@ -1,6 +1,6 @@
 {
-  "name": "progetto-ingegneria-del-software",
-  "version": "1.0.0",
+  "name": "Mountain-Hut-Group-10",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
