@@ -7,8 +7,15 @@
   "workbench.tree.enableStickyScroll": false,
 
   "editor.codeActionsOnSave": {
-    "source.organizeImports": "always"
+    "source.organizeImports": "always",
+    "source.addMissingImports": "always"
   },
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
+  "js/ts.preferences.importModuleSpecifierEnding": "minimal",
+  "js/ts.preferences.includePackageJsonAutoImports": "on",
+  "js/ts.suggest.autoImports": true,
+  "js/ts.updateImportsOnFileMove.enabled": "always",
+
   "better-comments.tags": [
     {
       "tag": "!",
