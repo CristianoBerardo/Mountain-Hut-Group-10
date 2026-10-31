@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS dining_table (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     table_number SMALLINT NOT NULL UNIQUE CHECK (table_number > 0),
     capacity SMALLINT NOT NULL CHECK (capacity > 0),
+    occupancy SMALLINT NOT NULL DEFAULT 0 CHECK (occupancy >= 0 AND occupancy <= capacity),
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
