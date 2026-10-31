@@ -1,32 +1,150 @@
-name: Build and Push Docker image
+name: Build and Push Docker Images
 
 on:
   push:
     branches:
       - main
+    tags:
+      - "v*.*.*"
+      - "*.*.*"
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Specific version for Docker tag (e.g., 1.0.1). Leave empty to auto-increment from Docker Hub or package.json"
+        required: false
+        default: ""
 
 jobs:
-  build:
+  build-and-push:
+    name: Build & Push Images
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 1. Determine Version (Manual -> Git Tag -> Docker Hub + 1 -> package.json)
+      - name: Determine Version
+        id: get_version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          GITHUB_REF: ${{ github.ref }}
+          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            const fallbackVersion = pkg.version || '1.0.0';
+            const inputVersion = process.env.INPUT_VERSION?.trim();
+            const ref = process.env.GITHUB_REF || '';
+            const dockerUser = (process.env.DOCKER_USER || '').toLowerCase();
+            const semverRegex = /^v?(\d+)\.(\d+)\.(\d+)$/;
+
+            async function resolveVersion() {
+              // 1. Manually provided via workflow_dispatch
+              if (inputVersion) {
+                return inputVersion.replace(/^v/, '');
+              }
+
+              // 2. If triggered by a Git tag (e.g., v1.2.3 or 1.2.3)
+              if (ref.startsWith('refs/tags/')) {
+                const tag = ref.replace('refs/tags/', '');
+                return tag.replace(/^v/, '');
+              }
+
+              // 3. Search for the latest tag on Docker Hub and increment the patch version
+              if (dockerUser) {
+                try {
+                  const url = \`https://hub.docker.com/v2/repositories/\${dockerUser}/mountain-hut-backend/tags?page_size=100\`;
+                  const res = await fetch(url);
+                  if (res.ok) {
+                    const data = await res.json();
+                    const semverTags = (data.results || [])
+                      .map(r => r.name)
+                      .filter(t => semverRegex.test(t))
+                      .map(t => {
+                        const m = t.match(semverRegex);
+                        return {
+                          major: parseInt(m[1], 10),
+                          minor: parseInt(m[2], 10),
+                          patch: parseInt(m[3], 10)
+                        };
+                      });
+
+                    if (semverTags.length > 0) {
+                      semverTags.sort((a, b) => a.major - b.major || a.minor - b.minor || a.patch - b.patch);
+                      const latest = semverTags[semverTags.length - 1];
+                      const nextVersion = \`\${latest.major}.\${latest.minor}.\${latest.patch + 1}\`;
+                      console.log(\`Find latest Docker Hub tag: \${latest.major}.\${latest.minor}.\${latest.patch}. Incrementing to: \${nextVersion}\`);
+                      return nextVersion;
+                    }
+                  }
+                } catch (err) {
+                  console.warn('Impossible to check Docker Hub tags:', err.message);
+                }
+              }
+
+              // 4. Fallback on package.json
+              console.log(\`No previous tag found. Using version from package.json: \${fallbackVersion}\`);
+              return fallbackVersion.replace(/^v/, '');
+            }
+
+            resolveVersion().then(version => {
+              fs.appendFileSync(process.env.GITHUB_OUTPUT, \`version=\${version}\n\`);
+              console.log(\`Final selected version: \${version}\`);
+            });
+          "
+
+      # 2. Configure Docker Buildx
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
+      # 3. Login to Docker Hub (executed only if not a pull request)
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+      # 4. Configure optional secret files (if necessary at build-time)
+      # For example, if you have saved the .env file or the json in the secrets:
+      - name: Setup Secrets
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+          mkdir -p backend/secrets
+          echo "${{ secrets.FIREBASE_SECRET }}" > backend/secrets/mountain-hut-group-10-firebase.json
+
+      # 5. Build & Push image Backend
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v6
         with:
-          context: .
-          push: true
-          tags: your-dockerhub-username/your-image-name:latest
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/mountain-hut-backend:${{ steps.get_version.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/mountain-hut-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 6. Build & Push image Frontend
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/mountain-hut-frontend:${{ steps.get_version.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/mountain-hut-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
