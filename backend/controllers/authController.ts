@@ -100,9 +100,9 @@ export async function registerUser(
                 name,
                 surname,
                 email,
-                mobile_number AS "mobileNumber",
+                mobile_number,
                 notes,
-                emergency_contact AS "emergencyContact",
+                emergency_contact,
                 role`,
             [
                 decodedUID,
