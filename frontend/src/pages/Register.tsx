@@ -90,8 +90,7 @@ function Register() {
                 email,
                 mobile_number: mobileNumber,
                 notes,
-                emergency_contact: emergencyContact,
-                external_provider: isGoogleRegistration
+                emergency_contact: emergencyContact
             });
 
             console.log("Backend response:", response);
