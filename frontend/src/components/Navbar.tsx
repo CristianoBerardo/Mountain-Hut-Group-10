@@ -5,7 +5,7 @@ function Navbar() {
     const navigate = useNavigate();
 
     const token = sessionStorage.getItem("jwt_token");
-    const username = sessionStorage.getItem("username");
+    const username = sessionStorage.getItem("name");
     const role = sessionStorage.getItem("role")
 
     const isLoggedIn = !!token;
@@ -13,7 +13,8 @@ function Navbar() {
     function handleLogout() {
         // Remove authentication information
         sessionStorage.removeItem("jwt_token");
-        sessionStorage.removeItem("username");
+        sessionStorage.removeItem("name");
+        sessionStorage.removeItem("role");
 
         // Redirect to Home
         navigate("/");

@@ -1,0 +1,345 @@
+/* CONTAINERS */
+
+.login-container,
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 75px);
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* CARDS */
+
+.login-card,
+.register-card {
+    width: 100%;
+    max-width: 430px;
+    padding: 30px;
+    background: var(--card-background, #f0f1ff);
+    border: 1px solid var(--border, #e2e2e8);
+    border-radius: 16px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* AUTH TABS */
+
+.auth-tabs {
+    display: flex;
+    width: 100%;
+    padding: 4px;
+    margin-bottom: 25px;
+    background: #e4e5e9;
+    border-radius: 40px;
+    box-sizing: border-box;
+}
+
+.auth-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    flex: 1;
+    min-height: 44px;
+    padding: 8px;
+    border-radius: 40px;
+    color: #222;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-tab.active {
+    color: white;
+    background: var(--accent, #7068f5);
+}
+
+/* TITLES */
+
+.login-card h1,
+.register-card h1 {
+    margin: 0 0 6px;
+    color: var(--text-h, #222);
+    font-size: 1.7rem;
+    font-weight: 700;
+}
+
+.login-card>p,
+.register-card>p:not(.register-login-link) {
+    margin: 0 0 25px;
+    color: var(--text, #666);
+    font-size: 0.9rem;
+}
+
+/* FORMS */
+
+.login-form,
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    text-align: left;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 100%;
+}
+
+.form-group label {
+    color: var(--text-h, #222);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* INPUTS */
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    min-height: 43px;
+    padding: 10px;
+    border: 1.5px solid var(--border, #e2e2e8);
+    border-radius: 7px;
+    background: white;
+    color: var(--text-h, #222);
+    font-family: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.form-group textarea {
+    min-height: 75px;
+    resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: var(--accent, #7068f5);
+}
+
+/* PASSWORD */
+
+.password-input-container {
+    position: relative;
+    width: 100%;
+}
+
+.password-input-container input {
+    padding-right: 40px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: #666;
+    cursor: pointer;
+}
+
+/* BUTTON */
+
+.login-button {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 10px;
+    border: none;
+    border-radius: 7px;
+    background: var(--accent, #7068f5);
+    color: white;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.register-button {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 10px;
+    border: none;
+    border-radius: 7px;
+    background: var(--accent, #7068f5);
+    color: white;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.register-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+/* ERRORS */
+
+.login-error,
+.register-error {
+    padding: 9px;
+    border: 1px solid var(--error-border, #f5b5b5);
+    border-radius: 7px;
+    background: var(--error-bg, #fff0f0);
+    color: var(--error, #d32f2f);
+    font-size: 12px;
+    text-align: center;
+}
+
+/* LINKS */
+
+.back-link,
+.register-login-link {
+    display: block;
+    margin-top: 20px;
+    color: var(--accent, #7068f5);
+    font-size: 14px;
+    text-align: center;
+    text-decoration: none;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 480px) {
+
+    .login-card,
+    .register-card {
+        padding: 22px 18px;
+    }
+
+    .auth-tab {
+        min-height: 40px;
+        font-size: 13px;
+    }
+}
+
+/* INPUT WITH ICON */
+
+.input-icon-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 43px;
+    padding: 0 12px;
+    border: 1.5px solid var(--border, #e2e2e8);
+    border-radius: 7px;
+    background: white;
+    box-sizing: border-box;
+    color: #888;
+}
+
+.input-icon-container:focus-within {
+    border-color: var(--accent, #7068f5);
+}
+
+.input-icon-container>svg {
+    flex-shrink: 0;
+}
+
+.input-icon-container input,
+.input-icon-container textarea {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    padding: 10px 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-h, #222);
+    font-family: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.input-icon-container input::placeholder,
+.input-icon-container textarea::placeholder {
+    color: #aaa;
+}
+
+/* PASSWORD */
+
+.password-input-container {
+    position: relative;
+}
+
+.password-input-container input {
+    padding-right: 30px;
+}
+
+.password-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+}
+
+/* TEXTAREA */
+
+/* NOTES TEXTAREA */
+
+/* NOTES */
+
+.textarea-container {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 90px;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.textarea-container>svg {
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.textarea-container textarea {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 65px;
+    padding: 3px 0 0 0;
+    margin: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 20px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.google-login-button {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 10px;
+    border: none;
+    border-radius: 7px;
+    background: #fff !important;
+    color: black;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
