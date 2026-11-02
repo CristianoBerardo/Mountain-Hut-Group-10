@@ -39,6 +39,26 @@ CREATE TABLE IF NOT EXISTS reservation_table (
     PRIMARY KEY (reservation_id, dining_table_id)
 );
 
+CREATE TABLE IF NOT EXISTS meal_slot (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    date        DATE        NOT NULL,
+    starts_at   TIME        NOT NULL,          -- e.g. '12:00'
+    ends_at     TIME        NOT NULL,          -- e.g. '13:00'
+    -- created_by  UUID        NOT NULL REFERENCES "user"(id) ON DELETE RESTRICT
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT meal_slot_end_after_start CHECK (ends_at > starts_at),
+    CONSTRAINT meal_slot_unique UNIQUE (date, starts_at, ends_at)
+);
+
+CREATE TABLE IF NOT EXISTS slot_table (
+    slot_id           UUID        NOT NULL REFERENCES meal_slot(id) ON DELETE CASCADE,
+    dining_table_id   UUID        NOT NULL REFERENCES dining_table(id) ON DELETE RESTRICT,
+    seats_in_slot     SMALLINT    NOT NULL CHECK (seats_in_slot > 0),
+    PRIMARY KEY (slot_id, dining_table_id)
+);
+
+CREATE INDEX IF NOT EXISTS slot_table_slot_id_idx ON slot_table (slot_id);
+
 CREATE INDEX IF NOT EXISTS meal_reservation_hiker_starts_at_idx
     ON meal_reservation (hiker_id, starts_at);
 
