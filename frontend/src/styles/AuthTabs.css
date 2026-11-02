@@ -328,3 +328,18 @@
     resize: vertical;
     box-sizing: border-box;
 }
+
+.google-login-button {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 10px;
+    border: none;
+    border-radius: 7px;
+    background: #fff !important;
+    color: black;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}

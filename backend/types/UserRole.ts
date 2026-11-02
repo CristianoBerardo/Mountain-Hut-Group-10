@@ -1,8 +1,8 @@
 export enum UserRole {
-  WARDEN,
-  EMPLOYEE,
-  HIKER,
-  USER,
+  WARDEN = "WARDEN",
+  EMPLOYEE = "EMPLOYEE",
+  HIKER = "HIKER",
+  USER = "USER",
 }
 
 // User: any person accessing the service’s public web pages.

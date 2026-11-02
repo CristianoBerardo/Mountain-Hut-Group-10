@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { signInWithEmailAndPassword } from "firebase/auth/web-extension";
+import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { Eye, EyeOff } from "lucide-react";
 import { loginUser } from "../api/authAPI";
 import "../App.css";
@@ -19,6 +19,7 @@ function Login() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [loadingGoogle, setLoadingGoogle] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
@@ -35,18 +36,14 @@ function Login() {
                 password
             );
 
-            console.log("Firebase login OK:", credentials.user.uid);
-
             const token = await credentials.user.getIdToken();
-
-            console.log("Firebase token obtained");
             
             const response = await loginUser(token);
 
-            console.log("Backend response:", response);
+            const tokenWithRole = await credentials.user.getIdToken(true);
 
             // Save JWT for subsequent API requests
-            sessionStorage.setItem("jwt_token", response.token);
+            sessionStorage.setItem("jwt_token", tokenWithRole);
             sessionStorage.setItem("name", response.user.name);
             sessionStorage.setItem("role", response.user.role);
 
@@ -57,6 +54,62 @@ function Login() {
                 err instanceof Error
                     ? err.message
                     : "Login failed"
+            );
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function handleGoogleLogin() {
+        setLoadingGoogle(true);
+        setError("");
+
+        try {
+            const provider = new GoogleAuthProvider();
+
+            const credentials = await signInWithPopup(auth, provider);
+
+            const token = await credentials.user.getIdToken();
+
+            try {
+                const response = await loginUser(token);
+                
+                // Registered user, save JWT for subsequent API requests
+                const tokenWithRole = await credentials.user.getIdToken(true);
+
+                sessionStorage.setItem("jwt_token", tokenWithRole);
+                sessionStorage.setItem("name", response.user.name);
+                sessionStorage.setItem("role", response.user.role);
+
+                navigate(from, { replace: true });
+            }
+            catch (err) {
+
+                console.log("CAUGHT ERROR:", err);
+                if (
+                    err instanceof Error &&
+                    err.message.includes("404")
+                ) {
+                    // Utente autenticato con Firebase, ma non registrato in PostgreSQL
+                    navigate("/register", {
+                        state: {
+                            displayName: credentials.user.displayName || "",
+                            email: credentials.user.email || "",
+                            uid: credentials.user.uid,
+                            provider: "google"
+                        }
+                    });
+                    return;
+                }
+            }
+
+        } catch (err) {
+            console.error("Google login error:", err);
+
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Google login failed"
             );
         } finally {
             setLoading(false);
@@ -125,6 +178,15 @@ function Login() {
                         </button>
 
                     </form>
+
+                    <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        className="nav-button google-login-button"
+                        disabled={loadingGoogle}
+                    >
+                        {loadingGoogle ? "Logging in with Google..." : "Login with Google"}
+                    </button>
 
                     <Link to="/" className="back-link">
                         ← Back to Home

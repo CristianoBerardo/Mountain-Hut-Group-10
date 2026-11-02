@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { adminAuth } from "../config/firebaseAdmin";
 import { pool } from "../connections/PostgreSQL/database";
+import { UserRole } from "../types/UserRole";
 
 export async function loginUser(
     req: Request,
@@ -33,9 +34,15 @@ export async function loginUser(
             return;
         }
 
+        // Add custom claims
+        const tokenWithRole =await adminAuth.setCustomUserClaims(decodedToken.uid, {
+            role: user.role as UserRole
+        });
+
+
         res.status(200).json({
             message: "Login successful",
-            token: authHeader,
+            token: tokenWithRole,
             user: {
                 id: user.id,
                 name: user.name,
@@ -70,7 +77,7 @@ export async function registerUser(
         const decodedUID = decodedToken.uid;
 
         // Validate required fields
-        if (!req.body.name || !req.body.surname || !req.body.email || !req.body.mobile_number || !req.body.emergency_contact) {
+        if (!req.body.name || !req.body.surname || !req.body.email || !req.body.mobile_number) {
             res.status(400).json({ error: "Missing required fields" });
             return;
         }
@@ -100,12 +107,12 @@ export async function registerUser(
             [
                 decodedUID,
                 req.body.name,
-                req.body.surname,
+                req.body.surname ?? null,
                 req.body.email,
-                req.body.mobile_number,
+                req.body.mobile_number ?? null,
                 req.body.notes ?? null,
-                req.body.emergency_contact,
-                "HIKER"
+                req.body.emergency_contact ?? null,
+                UserRole.HIKER  // Default role for new users
             ]
         );
         console.log("User from database:", result.rows[0]);
