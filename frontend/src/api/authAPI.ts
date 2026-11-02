@@ -1,6 +1,5 @@
 import type {
-    UserLoginDTO,
-    UserLoginResponseDTO,
+    UserLoginResponseDTO
 } from "../dto/UserDTO";
 
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || ""}/api/v1/auth`;
@@ -12,15 +11,14 @@ const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || ""}/api/v1/auth`;
  * @returns The created ticket.
  */
 export async function loginUser(
-    user_data: UserLoginDTO
+    token: string,
 ): Promise<UserLoginResponseDTO> {    
 
     const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+            Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(user_data)
     });
 
      if (!response.ok) {

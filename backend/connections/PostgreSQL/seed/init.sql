@@ -11,8 +11,13 @@ CREATE SEQUENCE IF NOT EXISTS ticket_code_seq START WITH 9;
 
 CREATE TABLE IF NOT EXISTS "user" (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
+    firebase_uid TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL UNIQUE,
+    surname TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    mobile_number TEXT NOT NULL UNIQUE,
+    notes TEXT,
+    emergency_contact TEXT NOT NULL,
     role TEXT NOT NULL
 );
 

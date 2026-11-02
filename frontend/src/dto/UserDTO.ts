@@ -4,8 +4,13 @@ export interface UserLoginDTO {
 }
 
 export interface UserDTONoPassword {
-    id: string
-    username: string;
+    id: string;
+    name: string;
+    surname: string;
+    email: string;
+    mobileNumber: string;
+    notes: string | null;
+    emergencyContact: string | null;
     role: string;
 }
 

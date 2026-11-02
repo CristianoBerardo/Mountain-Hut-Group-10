@@ -1,30 +1,30 @@
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import { adminAuth } from "../config/firebaseAdmin";
 import { pool } from "../connections/PostgreSQL/database";
-import { LoginDTO } from "../models/dto/AuthDTO";
 
 export async function loginUser(
     req: Request,
     res: Response
 ): Promise<void> {
     try {
-        const user_data: LoginDTO = req.body;
 
-        // Validate the request body
-        if (
-            typeof user_data.username !== "string" ||
-            user_data.username.trim().length === 0 || typeof user_data.password !== "string" ||
-            user_data.password.trim().length === 0
-        ) {
-            res.status(400).json({ error: "Username and password are required" });
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader?.startsWith("Bearer ")) {
+            res.status(401).json({ error: "Authorization header missing or invalid" });
             return;
         }
+        
+        const decodedToken = await adminAuth.verifyIdToken(authHeader?.split(" ")[1] || "");
+
+        const decodedUID = decodedToken.uid;
 
         // Find the user in the database
         const result = await pool.query(
-            `SELECT id, username, password, role FROM "user" WHERE username = $1`,
-            [user_data.username.trim()]
+            `SELECT id, name, surname, email, mobile_number, notes, emergency_contact, role FROM "user" WHERE firebase_uid = $1`,
+            [decodedUID]
         );
+        console.log("User from database:", result.rows[0]);
         const user = result.rows[0];
     
         // If the user is not found, return a 404 error
@@ -33,37 +33,17 @@ export async function loginUser(
             return;
         }
 
-        // Compare passwords (testing only)
-        if (user.password !== user_data.password) {
-            res.status(401).json({
-                error: "Invalid credentials"
-            });
-            return;
-        }
-
-        // Generate a JWT token (for demonstration purposes, using a simple string)
-        const secretKey = process.env.JWT_SECRET;
-
-        if (!secretKey) {
-            res.status(500).json({ error: "JWT secret key is not defined" });
-            return;
-        }
-
-        const token = jwt.sign({
-            role: user.role,
-        }, secretKey,
-            {
-                subject: String(user.id),
-                expiresIn: "1h",
-                algorithm: "HS256"
-            }
-        );
         res.status(200).json({
             message: "Login successful",
-            token,
+            token: authHeader,
             user: {
                 id: user.id,
-                username: user.username,
+                name: user.name,
+                surname: user.surname,
+                email: user.email,
+                mobileNumber: user.mobile_number,
+                notes: user.notes,
+                emergencyContact: user.emergency_contact,
                 role: user.role
             }
         });
