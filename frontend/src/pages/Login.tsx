@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from "firebase/auth/web-extension";
 import { Eye, EyeOff } from "lucide-react";
 import { loginUser } from "../api/authAPI";
 import "../App.css";
+import AuthTabs from "../components/AuthTabs";
 import Navbar from "../components/Navbar";
 import { auth } from "../config/firebase";
 
@@ -68,9 +69,11 @@ function Login() {
             <div className="login-container">
                 <div className="login-card">
 
+                    <AuthTabs />
+
                     <h1>Login</h1>
 
-                    <p>Sign in to access the Ticket System</p>
+                    <p>Sign in to access the Mountain Hut System</p>
 
                     <form onSubmit={handleLogin} className="login-form">
 

@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import GetTicket from './pages/GetTicket'
 import Home from './pages/Home'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import SeeStats from './pages/SeeStats'
 
 function App() {
@@ -21,8 +22,8 @@ function App() {
           <ProtectedRoute>
               <SeeStats />
           </ProtectedRoute>
-        }
-        />
+        } />
+        <Route path="/register" element={<Register />} />
       </Routes>
     </BrowserRouter>
   )

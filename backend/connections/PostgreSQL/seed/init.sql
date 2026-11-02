@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS "user" (
     name TEXT NOT NULL UNIQUE,
     surname TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    mobile_number TEXT NOT NULL UNIQUE,
+    mobile_number TEXT NOT NULL,
     notes TEXT,
     emergency_contact TEXT NOT NULL,
     role TEXT NOT NULL

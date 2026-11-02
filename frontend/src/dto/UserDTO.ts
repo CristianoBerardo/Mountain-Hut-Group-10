@@ -19,3 +19,12 @@ export interface UserLoginResponseDTO {
     token: string;
     user: UserDTONoPassword;
 }
+
+export interface UserRegisterDTO {
+    name: string;
+    surname: string;
+    email: string;
+    mobile_number: string;
+    notes?: string;
+    emergency_contact?: string;
+}
