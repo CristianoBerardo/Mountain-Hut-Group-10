@@ -2,17 +2,19 @@ import { Router } from "express";
 import {
   createReservationV2,
   deleteReservation,
+  getReservationById,
   getReservations,
+  updateReservation,
 } from "../controllers/reservationController";
 
 const router = Router();
 
-// In V2 they will be proteccted, for now they are public
-// router.post("/", createReservation);
+router.get("/", getReservations);
+router.get("/:id", getReservationById);
+
 router.post("/", createReservationV2);
 
-router.get("/", getReservations);
-router.get("/:id", getReservations);
+router.patch("/:id", updateReservation);
 
 router.delete("/:id", deleteReservation);
 
