@@ -4,6 +4,7 @@ import express from "express";
 import path from "path";
 import { startServer } from "./connections/PostgreSQL/database";
 import authRoutes from "./routes/authRoutes";
+import slotRoutes from "./routes/slotRoutes";
 import tableRoutes from "./routes/tableRoutes";
 import userRoutes from "./routes/userRoutes";
 import { testFirebaseAuth } from "./test-auth";
@@ -17,6 +18,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/slots", slotRoutes);
 app.use("/api/v1/tables", tableRoutes);
 
 const PORT = Number(process.env.PORT) || 3000;
