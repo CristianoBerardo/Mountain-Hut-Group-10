@@ -23,3 +23,28 @@ VALUES
     (3, 4),
     (4, 4),
     (5, 6);
+
+
+INSERT INTO meal_slot (id, date, starts_at, ends_at)
+VALUES
+    ('a1111111-1111-1111-1111-111111111111', CURRENT_DATE, '12:00', '13:30'),
+    ('a2222222-2222-2222-2222-222222222222', CURRENT_DATE, '13:30', '15:00'),
+    ('a3333333-3333-3333-3333-333333333333', CURRENT_DATE, '19:30', '21:00')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO slot_table (slot_id, dining_table_id, seats_in_slot)
+SELECT 
+    'a1111111-1111-1111-1111-111111111111',
+    id,
+    capacity
+FROM dining_table
+ON CONFLICT DO NOTHING;
+
+INSERT INTO slot_table (slot_id, dining_table_id, seats_in_slot)
+SELECT 
+    'a2222222-2222-2222-2222-222222222222',
+    id,
+    capacity
+FROM dining_table
+WHERE table_number IN (1, 2, 3)
+ON CONFLICT DO NOTHING;
