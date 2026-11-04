@@ -3,7 +3,7 @@ import { pool } from "../connections/PostgreSQL/database";
 import { DiningTable } from "../models/DiningTable";
 
 // GET + filters ?active=true&available=true
-export async function getTables(req: Request, res: Response) {
+export async function getTables(req: Request, res: Response): Promise<void> {
   try {
     const { active, available } = req.query;
     let query = `SELECT * FROM dining_table WHERE 1=1`;
@@ -28,7 +28,7 @@ export async function getTables(req: Request, res: Response) {
   }
 }
 
-export async function getTableById(req: Request, res: Response) {
+export async function getTableById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
     const result = await pool.query(
@@ -60,7 +60,10 @@ async function checkTableExists(
   return result.rows.length > 0;
 }
 
-export async function getTableByTableNumber(req: Request, res: Response) {
+export async function getTableByTableNumber(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const { table_number } = req.params;
 
@@ -84,7 +87,7 @@ export async function getTableByTableNumber(req: Request, res: Response) {
 }
 
 // ! Attention needed, does it make sense to have UUID ad a PK and table_number as a unique field?
-export async function createTable(req: Request, res: Response) {
+export async function createTable(req: Request, res: Response): Promise<void> {
   try {
     const table: Omit<DiningTable, "id"> = {
       ...req.body,
@@ -124,7 +127,7 @@ export async function createTable(req: Request, res: Response) {
   }
 }
 
-export async function updateTable(req: Request, res: Response) {
+export async function updateTable(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
 
@@ -184,7 +187,10 @@ export async function updateTable(req: Request, res: Response) {
   }
 }
 
-export async function resetTableOccupancy(req: Request, res: Response) {
+export async function resetTableOccupancy(
+  req: Request,
+  res: Response,
+): Promise<void> {
   try {
     const { id } = req.params;
     const result = await pool.query(
@@ -204,7 +210,7 @@ export async function resetTableOccupancy(req: Request, res: Response) {
   }
 }
 
-export async function deleteTable(req: Request, res: Response) {
+export async function deleteTable(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
 
