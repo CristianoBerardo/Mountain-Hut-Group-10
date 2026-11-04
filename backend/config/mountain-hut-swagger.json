@@ -1,0 +1,1037 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Mountain-Hut API",
+    "version": "1.0.0",
+    "description": "API documentation generated from the Mountain-Hut Postman collection."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Authentication-related endpoints."
+    },
+    {
+      "name": "Tables",
+      "description": "Manage dining tables."
+    },
+    {
+      "name": "Reservations",
+      "description": "Manage reservations."
+    },
+    {
+      "name": "Slots",
+      "description": "Manage meal slots and their assigned tables."
+    },
+    {
+      "name": "Users",
+      "description": "User-related endpoints."
+    }
+  ],
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Login and retrieve the user profile",
+        "description": "Verifies the Firebase ID Token, retrieves the user from PostgreSQL and assigns the user's role as a Firebase custom claim.",
+        "operationId": "loginUser",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Login successful",
+                  "user": {
+                    "id": "uuid",
+                    "name": "John",
+                    "surname": "Smith",
+                    "email": "john@example.com",
+                    "mobileNumber": "123456789",
+                    "notes": null,
+                    "emergencyContact": null,
+                    "role": "HIKER"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register a new user",
+        "description": "Verifies the Firebase ID Token and creates a new user record in PostgreSQL. The default role assigned to new users is HIKER.",
+        "operationId": "registerUser",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "surname",
+                  "email",
+                  "mobile_number"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "John"
+                  },
+                  "surname": {
+                    "type": "string",
+                    "example": "Smith"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "john@example.com"
+                  },
+                  "mobile_number": {
+                    "type": "string",
+                    "example": "123456789"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": null
+                  },
+                  "emergency_contact": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User registered successfully"
+          },
+          "400": {
+            "description": "Missing required fields"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/tables": {
+      "post": {
+        "tags": [
+          "Tables"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Create a table",
+        "operationId": "createTable",
+        "responses": {
+          "200": {
+            "description": "Table created successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTableRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tables/{tableId}": {
+      "get": {
+        "tags": [
+          "Tables"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Get a table by ID",
+        "operationId": "getTableById",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tableId"
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Tables"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Update a table",
+        "operationId": "updateTable",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tableId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTableRequest"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tables"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Delete a table",
+        "operationId": "deleteTable",
+        "responses": {
+          "200": {
+            "description": "Table deleted successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tableId"
+          }
+        ]
+      }
+    },
+    "/api/v1/tables/number/{tableNumber}": {
+      "get": {
+        "tags": [
+          "Tables"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Get a table by table number",
+        "operationId": "getTableByTableNumber",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tableNumber"
+          }
+        ]
+      }
+    },
+    "/api/v1/tables/{tableId}/reset": {
+      "patch": {
+        "tags": [
+          "Tables"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Reset table occupancy",
+        "operationId": "resetTableOccupancy",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/tableId"
+          }
+        ]
+      }
+    },
+    "/api/v1/reservations": {
+      "get": {
+        "tags": [
+          "Reservations"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Get all reservations",
+        "operationId": "getReservations",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Reservations"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
+        "summary": "Create a reservation",
+        "operationId": "createReservation",
+        "responses": {
+          "200": {
+            "description": "Reservation created successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReservationRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reservations/{reservationId}": {
+      "get": {
+        "tags": [
+          "Reservations"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
+        "summary": "Get a reservation by ID",
+        "operationId": "getReservationById",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/reservationId"
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Reservations"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
+        "summary": "Update a reservation",
+        "operationId": "updateReservation",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/reservationId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReservationRequest"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Reservations"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
+        "summary": "Delete a reservation",
+        "operationId": "deleteReservation",
+        "responses": {
+          "200": {
+            "description": "Reservation deleted successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/reservationId"
+          }
+        ]
+      }
+    },
+    "/api/v1/slots": {
+      "get": {
+        "tags": [
+          "Slots"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Get all meal slots",
+        "operationId": "getMealSlots",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Slots"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Create a meal slot",
+        "operationId": "createMealSlot",
+        "responses": {
+          "200": {
+            "description": "Meal slot created successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSlotRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/slots/{slotId}": {
+      "get": {
+        "tags": [
+          "Slots"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Get a meal slot by ID",
+        "operationId": "getMealSlotById",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/slotId"
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Slots"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Delete a meal slot",
+        "operationId": "deleteMealSlot",
+        "responses": {
+          "200": {
+            "description": "Meal slot deleted successfully"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/slotId"
+          }
+        ]
+      }
+    },
+    "/api/v1/slots/{slotId}/details": {
+      "get": {
+        "tags": [
+          "Slots"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Get meal slot details",
+        "operationId": "getMealSlotDetails",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/slotId"
+          }
+        ]
+      }
+    },
+    "/api/v1/slots/available": {
+      "get": {
+        "tags": [
+          "Slots"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
+        "summary": "Get available meal slots",
+        "operationId": "getAvailableSlots",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/slots/{slotId}/tables": {
+      "post": {
+        "tags": [
+          "Slots"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Add a table to a meal slot",
+        "operationId": "addTableToSlot",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/slotId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddTableToSlotRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/slots/{slotId}/tables/{tableId}": {
+      "delete": {
+        "tags": [
+          "Slots"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Remove a table from a meal slot",
+        "operationId": "removeTableFromSlot",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/slotId"
+          },
+          {
+            "name": "tableId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "ID of the dining table to remove."
+          }
+        ]
+      }
+    },
+    "/api/v1/users/": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "summary": "Get users",
+        "operationId": "getUsers",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Table": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "table_number": {
+            "type": "integer",
+            "example": 10
+          },
+          "capacity": {
+            "type": "integer",
+            "example": 6
+          },
+          "occupancy": {
+            "type": "integer",
+            "example": 0
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "CreateTableRequest": {
+        "type": "object",
+        "required": [
+          "table_number",
+          "capacity",
+          "occupancy",
+          "is_active"
+        ],
+        "properties": {
+          "table_number": {
+            "type": "integer",
+            "example": 10
+          },
+          "capacity": {
+            "type": "integer",
+            "example": 6
+          },
+          "occupancy": {
+            "type": "integer",
+            "example": 0
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "UpdateTableRequest": {
+        "type": "object",
+        "properties": {
+          "table_number": {
+            "type": "integer",
+            "example": 3
+          },
+          "capacity": {
+            "type": "integer",
+            "example": 8
+          },
+          "occupancy": {
+            "type": "integer",
+            "example": 4
+          }
+        }
+      },
+      "Reservation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "hiker_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "f2693a0f-0a2c-4402-a771-481f4a1f4ea8"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-03T14:00:00Z"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-03T15:00:00Z"
+          },
+          "slot_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "aaaaaaaa-0001-0001-0001-000000000001"
+          },
+          "party_size": {
+            "type": "integer",
+            "example": 2
+          },
+          "status": {
+            "type": "string",
+            "example": "CONFIRMED"
+          }
+        }
+      },
+      "CreateReservationRequest": {
+        "type": "object",
+        "required": [
+          "hiker_id",
+          "starts_at",
+          "ends_at",
+          "slot_id",
+          "party_size",
+          "status"
+        ],
+        "properties": {
+          "hiker_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "f2693a0f-0a2c-4402-a771-481f4a1f4ea8"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-03T14:00:00Z"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-03T15:00:00Z"
+          },
+          "slot_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "aaaaaaaa-0001-0001-0001-000000000001"
+          },
+          "party_size": {
+            "type": "integer",
+            "example": 2
+          },
+          "status": {
+            "type": "string",
+            "example": "CONFIRMED"
+          }
+        }
+      },
+      "UpdateReservationRequest": {
+        "type": "object",
+        "properties": {
+          "party_size": {
+            "type": "integer",
+            "example": 2
+          }
+        }
+      },
+      "CreateSlotRequest": {
+        "type": "object",
+        "required": [
+          "date",
+          "starts_at",
+          "ends_at"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-05"
+          },
+          "starts_at": {
+            "type": "string",
+            "example": "17:00"
+          },
+          "ends_at": {
+            "type": "string",
+            "example": "18:00"
+          }
+        }
+      },
+      "AddTableToSlotRequest": {
+        "type": "object",
+        "required": [
+          "dining_table_id"
+        ],
+        "properties": {
+          "dining_table_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "1757cdf9-a0d6-4723-9bea-4a7ebff31a7c"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "tableId": {
+        "name": "tableId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "reservationId": {
+        "name": "reservationId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "slotId": {
+        "name": "slotId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "tableNumber": {
+        "name": "tableNumber",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "example": 1
+        }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Insert the Firebase Token"
+      }
+    }
+  }
+}

@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
-
+import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { Eye, EyeOff } from "lucide-react";
 import { loginUser } from "../api/authAPI";
 import "../App.css";
+import AuthTabs from "../components/AuthTabs";
 import Navbar from "../components/Navbar";
+import { auth } from "../config/firebase";
 
 function Login() {
     const navigate = useNavigate();
@@ -12,10 +15,12 @@ function Login() {
 
     const from =(location.state as { from?: string } | null)?.from ?? "/";
 
-    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [loadingGoogle, setLoadingGoogle] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -24,14 +29,24 @@ function Login() {
         setError("");
 
         try {
-            const response = await loginUser({
-                username,
+            // Firebase login
+            const credentials = await signInWithEmailAndPassword(
+                auth,
+                email,
                 password
-            });
+            );
+
+            const token = await credentials.user.getIdToken();
+            
+            const response = await loginUser(token);
+
+            const tokenWithRole = await credentials.user.getIdToken(true);
+
+            console.log("User logged in successfully:", tokenWithRole);
 
             // Save JWT for subsequent API requests
-            sessionStorage.setItem("jwt_token", response.token);
-            sessionStorage.setItem("username", response.user.username);
+            sessionStorage.setItem("jwt_token", tokenWithRole);
+            sessionStorage.setItem("name", response.user.name);
             sessionStorage.setItem("role", response.user.role);
 
             navigate(from, { replace: true });
@@ -47,15 +62,76 @@ function Login() {
         }
     }
 
+    async function handleGoogleLogin() {
+        setLoadingGoogle(true);
+        setError("");
+
+        try {
+            const provider = new GoogleAuthProvider();
+
+            const credentials = await signInWithPopup(auth, provider);
+
+            const token = await credentials.user.getIdToken();
+
+            try {
+                const response = await loginUser(token);
+                
+                // Registered user, save JWT for subsequent API requests
+                const tokenWithRole = await credentials.user.getIdToken(true);
+
+                sessionStorage.setItem("jwt_token", tokenWithRole);
+
+                console.log("User logged in successfully:", tokenWithRole);
+
+                sessionStorage.setItem("name", response.user.name);
+                sessionStorage.setItem("role", response.user.role);
+
+                navigate(from, { replace: true });
+            }
+            catch (err) {
+
+                console.log("CAUGHT ERROR:", err);
+                if (
+                    err instanceof Error &&
+                    err.message.includes("404")
+                ) {
+                    // Utente autenticato con Firebase, ma non registrato in PostgreSQL
+                    navigate("/register", {
+                        state: {
+                            displayName: credentials.user.displayName || "",
+                            email: credentials.user.email || "",
+                            uid: credentials.user.uid,
+                            provider: "google"
+                        }
+                    });
+                    return;
+                }
+            }
+
+        } catch (err) {
+            console.error("Google login error:", err);
+
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "Google login failed"
+            );
+        } finally {
+            setLoading(false);
+        }
+    }
+
     return (
         <>
             <Navbar />
             <div className="login-container">
                 <div className="login-card">
 
+                    <AuthTabs />
+
                     <h1>Login</h1>
 
-                    <p>Sign in to access the Ticket System</p>
+                    <p>Sign in to access the Mountain Hut System</p>
 
                     <form onSubmit={handleLogin} className="login-form">
 
@@ -63,10 +139,10 @@ function Login() {
                             <label htmlFor="username">Username</label>
 
                             <input
-                                id="username"
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                id="email"
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                             />
                         </div>
@@ -74,13 +150,22 @@ function Login() {
                         <div className="form-group">
                             <label htmlFor="password">Password</label>
 
-                            <input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
+                            <div className="password-input-container">
+                                <input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    className="password-toggle"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    aria-label={showPassword ? "Hide password" : "Show password"} >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                         </div>
 
                         {error && (
@@ -98,6 +183,15 @@ function Login() {
                         </button>
 
                     </form>
+
+                    <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        className="nav-button google-login-button"
+                        disabled={loadingGoogle}
+                    >
+                        {loadingGoogle ? "Logging in with Google..." : "Login with Google"}
+                    </button>
 
                     <Link to="/" className="back-link">
                         ← Back to Home

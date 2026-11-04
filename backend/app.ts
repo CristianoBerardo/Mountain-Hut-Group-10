@@ -2,10 +2,13 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import path from "path";
+import swaggerUi from "swagger-ui-express";
+import { swaggerConfig } from "./config/swagger-config";
 import { startServer } from "./connections/PostgreSQL/database";
 import authRoutes from "./routes/authRoutes";
-import statsRoutes from "./routes/statsRoutes";
-import ticketRoutes from "./routes/ticketRoutes";
+import reservationRoutes from "./routes/reservationRoutes";
+import slotRoutes from "./routes/slotRoutes";
+import tableRoutes from "./routes/tableRoutes";
 import userRoutes from "./routes/userRoutes";
 import { testFirebaseAuth } from "./test-auth";
 
@@ -16,10 +19,18 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use("/api/tickets", ticketRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/stats", statsRoutes);
+app.use("/api/v1/tables", tableRoutes);
+
+app.use("/api/v1/slots", slotRoutes);
+app.use("/api/v1/reservations", reservationRoutes);
+
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerConfig)
+);
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -36,7 +47,6 @@ app.get("/api/health", (_req, res) => {
 //  await startServer();
 //});
 
-
 if (require.main === module) {
   app.listen(PORT, async () => {
     console.log(`Backend server is running on port ${PORT}...`);
@@ -45,6 +55,5 @@ if (require.main === module) {
     await testFirebaseAuth();
   });
 }
-
 
 export default app;

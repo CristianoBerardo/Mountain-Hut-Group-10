@@ -1,30 +1,31 @@
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import { adminAuth } from "../config/firebaseAdmin";
 import { pool } from "../connections/PostgreSQL/database";
-import { LoginDTO } from "../models/dto/AuthDTO";
+import { UserRole } from "../types/UserRole";
 
 export async function loginUser(
     req: Request,
     res: Response
 ): Promise<void> {
     try {
-        const user_data: LoginDTO = req.body;
 
-        // Validate the request body
-        if (
-            typeof user_data.username !== "string" ||
-            user_data.username.trim().length === 0 || typeof user_data.password !== "string" ||
-            user_data.password.trim().length === 0
-        ) {
-            res.status(400).json({ error: "Username and password are required" });
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader?.startsWith("Bearer ")) {
+            res.status(401).json({ error: "Authorization header missing or invalid" });
             return;
         }
+        
+        const decodedToken = await adminAuth.verifyIdToken(authHeader?.split(" ")[1] || "");
+
+        const decodedUID = decodedToken.uid;
 
         // Find the user in the database
         const result = await pool.query(
-            `SELECT id, username, password, role FROM "user" WHERE username = $1`,
-            [user_data.username.trim()]
+            `SELECT id, name, surname, email, mobile_number, notes, emergency_contact, role FROM "user" WHERE firebase_uid = $1`,
+            [decodedUID]
         );
+        console.log("User from database:", result.rows[0]);
         const user = result.rows[0];
     
         // If the user is not found, return a 404 error
@@ -33,37 +34,107 @@ export async function loginUser(
             return;
         }
 
-        // Compare passwords (testing only)
-        if (user.password !== user_data.password) {
-            res.status(401).json({
-                error: "Invalid credentials"
-            });
-            return;
-        }
+        // Add custom claims
+        const tokenWithRole =await adminAuth.setCustomUserClaims(decodedToken.uid, {
+            role: user.role as UserRole
+        });
 
-        // Generate a JWT token (for demonstration purposes, using a simple string)
-        const secretKey = process.env.JWT_SECRET;
 
-        if (!secretKey) {
-            res.status(500).json({ error: "JWT secret key is not defined" });
-            return;
-        }
-
-        const token = jwt.sign({
-            role: user.role,
-        }, secretKey,
-            {
-                subject: String(user.id),
-                expiresIn: "1h",
-                algorithm: "HS256"
-            }
-        );
         res.status(200).json({
             message: "Login successful",
-            token,
+            token: tokenWithRole,
             user: {
                 id: user.id,
-                username: user.username,
+                name: user.name,
+                surname: user.surname,
+                email: user.email,
+                mobileNumber: user.mobile_number,
+                notes: user.notes,
+                emergencyContact: user.emergency_contact,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error("Error logging in user:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+export async function registerUser(
+    req: Request,
+    res: Response
+): Promise<void> {
+    try {
+        const authHeader = req.headers.authorization;
+
+        if (!authHeader?.startsWith("Bearer ")) {
+            res.status(401).json({ error: "Authorization header missing or invalid" });
+            return;
+        }
+        
+        const decodedToken = await adminAuth.verifyIdToken(authHeader?.split(" ")[1] || "");
+
+        const decodedUID = decodedToken.uid;
+
+        // Validate required fields
+        if (!req.body.name || !req.body.surname || !req.body.email || !req.body.mobile_number) {
+            res.status(400).json({ error: "Missing required fields" });
+            return;
+        }
+
+        // Insert user into PostgreSQL
+        const result = await pool.query(
+            `INSERT INTO "user" (
+                firebase_uid,
+                name,
+                surname,
+                email,
+                mobile_number,
+                notes,
+                emergency_contact,
+                role
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING
+                id,
+                name,
+                surname,
+                email,
+                mobile_number,
+                notes,
+                emergency_contact,
+                role`,
+            [
+                decodedUID,
+                req.body.name,
+                req.body.surname ?? null,
+                req.body.email,
+                req.body.mobile_number ?? null,
+                req.body.notes ?? null,
+                req.body.emergency_contact ?? null,
+                UserRole.HIKER  // Default role for new users
+            ]
+        );
+        console.log("User from database:", result.rows[0]);
+        const user = result.rows[0];
+    
+        // If the user is not found, return a 404 error
+        if (!user) {
+            res.status(404).json({ error: "User not found" });
+            return;
+        }
+
+        res.status(200).json({
+            message: "Login successful",
+            token: authHeader.split(" ")[1],
+            user: {
+                id: user.id,
+                name: user.name,
+                surname: user.surname,
+                email: user.email,
+                mobileNumber: user.mobile_number,
+                notes: user.notes,
+                emergencyContact: user.emergency_contact,
                 role: user.role
             }
         });
