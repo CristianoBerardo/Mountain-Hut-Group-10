@@ -9,21 +9,24 @@ import {
   removeTableFromSlot,
 } from "../controllers/slotsController";
 import { getAvailableSlot } from "../controllers/slotsTableController";
+import { authenticateToken } from "../middleware/authenticateToken";
+import { authorizeRole } from "../middleware/authorizeRole";
+import { UserRole } from "../types/UserRole";
 
 const router = Router();
 
-router.get("/", getMealSlots);
-router.get("/available", getAvailableSlot);
+router.get("/", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), getMealSlots);
+router.get("/available", authenticateToken, authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN), getAvailableSlot);
 
-router.get("/:id", getMealSlotById);
-router.get("/:id/details", getMealSlotDetails);
+router.get("/:id", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), getMealSlotById);
+router.get("/:id/details", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), getMealSlotDetails);
 
 // Used by the employee
-router.post("/", createMealSlot);
+router.post("/", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), createMealSlot);
 
-router.post("/:id/tables", addTableToSlot);
+router.post("/:id/tables", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), addTableToSlot);
 
-router.delete("/:id", deleteMealSlot);
-router.delete("/:id/tables/:tableId", removeTableFromSlot);
+router.delete("/:id", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), deleteMealSlot);
+router.delete("/:id/tables/:tableId", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), removeTableFromSlot);
 
 export default router;
