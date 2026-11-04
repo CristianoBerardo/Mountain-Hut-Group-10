@@ -1,63 +1,31 @@
 import { useEffect, useState } from "react";
 
-import { getTables, updateTable } from "../api/tableAPI";
+import { createReservation } from "../api/reservationAPI";
+import { getAvailableSlots } from "../api/slotAPI";
 import "../App.css";
+import BookingCalendar from "../components/BookingCalendar";
 import Navbar from "../components/Navbar";
-import type { TableDTO } from "../dto/TableDTO";
+import type { AssignedTableDTO } from "../dto/ReservationDTO";
+import type { AvailableSlotDTO } from "../dto/SlotDTO";
 import {
     BOOKING_NOTICE_HOURS,
-    bookableDays,
     formatDay,
-    formatMealTime,
-    isBookable,
-    MEAL_TIMES,
-    type MealTime
-} from "../utils/mealTimes";
-import {
-    assignTablesToParty,
-    type TableAssignment,
-    type TableFreeSeats
-} from "../utils/tableAssignment";
+    formatTimeRange,
+    isBookable
+} from "../utils/slotFormat";
 
-const SESSION_BOOKINGS_KEY = "test_bookings";
+// Seeded hiker, used while booking works without login
+const TEST_HIKER_ID = "cccccccc-0005-0005-0005-000000000005";
 
 interface Booking {
-    day: string;
-    meal: MealTime;
+    slot: AvailableSlotDTO;
     partySize: number;
-    tables: TableAssignment[];
+    tables: AssignedTableDTO[];
 }
 
-function bookingKey(day: string, meal: MealTime): string {
-    return `${day} ${meal.startsAt}`;
-}
-
-// No reservation API yet: one booking per slot is tracked per browser session
-function getSessionBookings(): string[] {
-    try {
-        return JSON.parse(sessionStorage.getItem(SESSION_BOOKINGS_KEY) ?? "[]");
-    } catch {
-        return [];
-    }
-}
-
-function addSessionBooking(key: string) {
-    sessionStorage.setItem(SESSION_BOOKINGS_KEY, JSON.stringify([...getSessionBookings(), key]));
-}
-
-function toFreeSeats(tables: TableDTO[]): TableFreeSeats[] {
+function describeSeats(tables: AssignedTableDTO[]): string {
     return tables
-        .filter((t) => t.is_active)
-        .map((t) => ({
-            tableId: t.id,
-            tableNumber: t.table_number,
-            freeSeats: t.capacity - t.occupancy
-        }));
-}
-
-function describeSeats(tables: TableAssignment[]): string {
-    return tables
-        .map((t) => `table ${t.tableNumber} (${t.seatsAssigned} ${t.seatsAssigned === 1 ? "seat" : "seats"})`)
+        .map((t) => `table ${t.table_number} (${t.seats_assigned} ${t.seats_assigned === 1 ? "seat" : "seats"})`)
         .join(", ");
 }
 
@@ -65,31 +33,37 @@ function people(count: number): string {
     return `${count} ${count === 1 ? "person" : "people"}`;
 }
 
-// MH-01: a booking adds the assigned seats to each table's occupancy
+// Strips the status code added by requestJSON, e.g. "... (409)"
+function serverMessage(err: unknown): string {
+    return err instanceof Error
+        ? err.message.replace(/ \(\d{3}\)$/, "")
+        : "Sorry, your booking could not be completed. Please try again.";
+}
+
+// MH-01: the hiker picks an available slot and a party size; the backend assigns the tables
 function BookTable() {
-    const [tables, setTables] = useState<TableDTO[]>([]);
+    const [slots, setSlots] = useState<AvailableSlotDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState("");
 
     const [day, setDay] = useState("");
-    const [mealStart, setMealStart] = useState("");
+    const [slotId, setSlotId] = useState("");
     const [partySize, setPartySize] = useState("");
     const [error, setError] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [booking, setBooking] = useState<Booking | null>(null);
-    const [bookedKeys, setBookedKeys] = useState<string[]>(getSessionBookings);
 
     const [reloadKey, setReloadKey] = useState(0);
 
     useEffect(() => {
         let active = true;
 
-        async function loadTables() {
+        async function loadSlots() {
             try {
-                const result = await getTables({ active: true });
+                const result = await getAvailableSlots();
 
                 if (active) {
-                    setTables(result);
+                    setSlots(result);
                     setLoadError("");
                 }
             } catch {
@@ -103,30 +77,29 @@ function BookTable() {
             }
         }
 
-        loadTables();
+        loadSlots();
 
         return () => {
             active = false;
         };
     }, [reloadKey]);
 
-    const days = bookableDays();
-    const meal = MEAL_TIMES.find((m) => m.startsAt === mealStart);
-    const freeSeats = toFreeSeats(tables).reduce((sum, t) => sum + t.freeSeats, 0);
+    // Only dates that still have a bookable slot with free seats
+    const bookableSlots = slots.filter((s) => isBookable(s) && s.available_seats > 0);
+    const days = [...new Set(bookableSlots.map((s) => s.date))];
+    const daySlots = slots.filter((s) => s.date === day);
+    const slot = slots.find((s) => s.slot_id === slotId);
+
     const size = Number(partySize);
     const validSize = Number.isInteger(size) && size > 0;
-    const tooMany = validSize && !loading && size > freeSeats;
+    const tooMany = !!slot && validSize && size > slot.available_seats;
 
-    function unavailableReason(m: MealTime): string | null {
-        if (!isBookable(day, m.startsAt)) {
+    function unavailableReason(s: AvailableSlotDTO): string | null {
+        if (!isBookable(s)) {
             return "booking closed";
         }
 
-        if (bookedKeys.includes(bookingKey(day, m))) {
-            return "already booked";
-        }
-
-        if (!loading && freeSeats === 0) {
+        if (s.available_seats === 0) {
             return "full";
         }
 
@@ -135,14 +108,14 @@ function BookTable() {
 
     function chooseDay(value: string) {
         setDay(value);
-        setMealStart("");
+        setSlotId("");
         setError("");
     }
 
     function startNewBooking() {
         setBooking(null);
         setDay("");
-        setMealStart("");
+        setSlotId("");
         setPartySize("");
         setError("");
     }
@@ -152,7 +125,7 @@ function BookTable() {
         setError("");
 
         // Mandatory fields: date, time, number of people
-        if (!day || !meal) {
+        if (!day || !slot) {
             setError("Please choose a date and a time.");
             return;
         }
@@ -163,68 +136,31 @@ function BookTable() {
         }
 
         // Re-checked: time may have passed since the page loaded
-        if (!isBookable(day, meal.startsAt)) {
+        if (!isBookable(slot)) {
             setError(`Bookings close ${BOOKING_NOTICE_HOURS} hours before the meal. Please choose a later time.`);
             return;
         }
 
-        if (bookedKeys.includes(bookingKey(day, meal))) {
-            setError("You already have a booking for this date and time.");
+        if (tooMany) {
+            setError(`Sorry, only ${slot.available_seats} seats are free. Please reduce the number of people.`);
             return;
         }
 
         setSubmitting(true);
 
-        // Rolled back if a later update fails
-        const applied: TableDTO[] = [];
-
         try {
-            const latest = await getTables({ active: true });
-            const assignment = assignTablesToParty(size, toFreeSeats(latest));
+            const result = await createReservation({
+                hiker_id: sessionStorage.getItem("user_id") ?? TEST_HIKER_ID,
+                slot_id: slot.slot_id,
+                party_size: size
+            });
 
-            if (!assignment) {
-                const latestFree = toFreeSeats(latest).reduce((sum, t) => sum + t.freeSeats, 0);
-
-                setTables(latest);
-                setError(latestFree === 0
-                    ? "Sorry, there are no free seats left."
-                    : `Sorry, only ${latestFree} seats are free. Please reduce the number of people.`);
-                return;
-            }
-
-            for (const seat of assignment) {
-                const table = latest.find((t) => t.id === seat.tableId)!;
-
-                await updateTable(table.id, {
-                    table_number: table.table_number,
-                    capacity: table.capacity,
-                    occupancy: table.occupancy + seat.seatsAssigned,
-                    is_active: table.is_active
-                });
-
-                applied.push(table);
-            }
-
-            const key = bookingKey(day, meal);
-
-            addSessionBooking(key);
-            setBookedKeys((keys) => [...keys, key]);
-            setBooking({ day, meal, partySize: size, tables: assignment });
-            setReloadKey((k) => k + 1);
-        } catch {
-            await Promise.allSettled(applied.map((table) =>
-                updateTable(table.id, {
-                    table_number: table.table_number,
-                    capacity: table.capacity,
-                    occupancy: table.occupancy,
-                    is_active: table.is_active
-                })
-            ));
-
-            setError("Sorry, your booking could not be completed. Please try again.");
-            setReloadKey((k) => k + 1);
+            setBooking({ slot, partySize: size, tables: result.tables });
+        } catch (err) {
+            setError(serverMessage(err));
         } finally {
             setSubmitting(false);
+            setReloadKey((k) => k + 1);
         }
     }
 
@@ -240,11 +176,11 @@ function BookTable() {
                         <dl className="client-summary">
                             <div>
                                 <dt>Date</dt>
-                                <dd>{formatDay(booking.day)}</dd>
+                                <dd>{formatDay(booking.slot.date)}</dd>
                             </div>
                             <div>
                                 <dt>Time</dt>
-                                <dd>{formatMealTime(booking.meal)}</dd>
+                                <dd>{formatTimeRange(booking.slot)}</dd>
                             </div>
                             <div>
                                 <dt>Party</dt>
@@ -268,34 +204,42 @@ function BookTable() {
 
                         {loadError && <p className="client-error" role="alert">{loadError}</p>}
 
-                        <label className="client-field">
+                        {!loading && !loadError && days.length === 0 && (
+                            <p className="client-error" role="alert">
+                                There are no meals open for booking at the moment.
+                            </p>
+                        )}
+
+                        <div className="client-field">
                             <span>Date</span>
-                            <select value={day} onChange={(e) => chooseDay(e.target.value)} required>
-                                <option value="">Choose a date</option>
-                                {days.map((d) => (
-                                    <option key={d} value={d}>{formatDay(d)}</option>
-                                ))}
-                            </select>
-                        </label>
+                            <BookingCalendar availableDays={days} selected={day} onSelect={chooseDay} />
+                            <small className="client-hint">
+                                {loading
+                                    ? "Loading available dates…"
+                                    : day
+                                        ? formatDay(day)
+                                        : "Choose one of the highlighted dates."}
+                            </small>
+                        </div>
 
                         <label className="client-field">
                             <span>Time</span>
                             <select
-                                value={mealStart}
+                                value={slotId}
                                 onChange={(e) => {
-                                    setMealStart(e.target.value);
+                                    setSlotId(e.target.value);
                                     setError("");
                                 }}
                                 disabled={!day}
                                 required
                             >
                                 <option value="">{day ? "Choose a time" : "Choose a date first"}</option>
-                                {day && MEAL_TIMES.map((m) => {
-                                    const reason = unavailableReason(m);
+                                {daySlots.map((s) => {
+                                    const reason = unavailableReason(s);
 
                                     return (
-                                        <option key={m.startsAt} value={m.startsAt} disabled={reason !== null}>
-                                            {formatMealTime(m)}{reason ? ` (${reason})` : ""}
+                                        <option key={s.slot_id} value={s.slot_id} disabled={reason !== null}>
+                                            {formatTimeRange(s)}{reason ? ` (${reason})` : ""}
                                         </option>
                                     );
                                 })}
@@ -308,7 +252,7 @@ function BookTable() {
                                 type="number"
                                 inputMode="numeric"
                                 min={1}
-                                max={freeSeats || undefined}
+                                max={slot?.available_seats}
                                 placeholder="e.g. 4"
                                 value={partySize}
                                 onChange={(e) => {
@@ -317,11 +261,9 @@ function BookTable() {
                                 }}
                                 required
                             />
-                            {!loading && !loadError && (
+                            {slot && (
                                 <small className={tooMany ? "client-hint warning" : "client-hint"}>
-                                    {freeSeats === 0
-                                        ? "No seats are free at the moment."
-                                        : `${freeSeats} seats free.`}
+                                    {slot.available_seats} seats free at this time.
                                 </small>
                             )}
                         </label>
