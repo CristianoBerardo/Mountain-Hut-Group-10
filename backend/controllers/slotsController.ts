@@ -109,7 +109,7 @@ export async function createMealSlot(
     const obj = error as { code: string };
 
     if (obj.code === "23505") {
-      res.status(400).json({ error: "Slot already exists" });
+      res.status(409).json({ error: "Slot already exists" });
       return;
     }
 
