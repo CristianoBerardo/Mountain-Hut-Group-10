@@ -48,7 +48,7 @@ export async function getTableById(req: Request, res: Response) {
   }
 }
 
-// excludeId: ignore this table, so that an update can keep its own table_number
+// excludeId lets an update keep its own table_number
 async function checkTableExists(
   table_number: Number,
   excludeId?: string,

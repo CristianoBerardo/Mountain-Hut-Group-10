@@ -1,13 +1,4 @@
-/**
- * Table assignment for a party (MH-01).
- *
- * Same algorithm as backend/utils/tableAssignment.ts on staging, which has no
- * reservation endpoint yet, so the booking page has to assign tables itself:
- *  1. seat the whole party at the single table with the fewest free seats that
- *     still fits it (tables are shared with other parties);
- *  2. otherwise split the party over as few tables as possible, choosing the
- *     combination that wastes the fewest seats, filling the largest tables first.
- */
+// Same algorithm as backend/utils/tableAssignment.ts
 
 export interface TableFreeSeats {
     tableId: string;
@@ -21,9 +12,7 @@ export interface TableAssignment {
     seatsAssigned: number;
 }
 
-/**
- * @returns The seats to take on each table, or null if the party does not fit.
- */
+// Returns null if the party does not fit
 export function assignTablesToParty(
     partySize: number,
     tables: TableFreeSeats[]
@@ -60,7 +49,7 @@ export function assignTablesToParty(
         return null;
     }
 
-    // Largest tables first, to keep the party as together as possible
+    // Largest tables first
     combination.sort((a, b) => b.freeSeats - a.freeSeats);
 
     const assignments: TableAssignment[] = [];
@@ -80,10 +69,7 @@ export function assignTablesToParty(
     return assignments;
 }
 
-/**
- * Smallest number of tables first; among those, the combination with the
- * fewest free seats in total (i.e. the fewest wasted seats).
- */
+// Fewest tables, then fewest wasted seats
 function findOptimalTableCombination(
     tables: TableFreeSeats[],
     partySize: number

@@ -19,7 +19,6 @@ import {
     type TableFreeSeats
 } from "../utils/tableAssignment";
 
-// Session key of the bookings made in this browser session
 const SESSION_BOOKINGS_KEY = "test_bookings";
 
 interface Booking {
@@ -33,10 +32,7 @@ function bookingKey(day: string, meal: MealTime): string {
     return `${day} ${meal.startsAt}`;
 }
 
-/**
- * Staging has no reservation API: one booking per time slot on a date
- * is enforced for the current browser session only.
- */
+// No reservation API yet: one booking per slot is tracked per browser session
 function getSessionBookings(): string[] {
     try {
         return JSON.parse(sessionStorage.getItem(SESSION_BOOKINGS_KEY) ?? "[]");
@@ -69,14 +65,7 @@ function people(count: number): string {
     return `${count} ${count === 1 ? "person" : "people"}`;
 }
 
-/**
- * MH-01 — Book a table (hiker-facing).
- *
- * A simple form with the three mandatory fields: date, time and number of
- * people. The system assigns the tables. Uses only the dining tables API
- * available on staging: a booking adds the assigned seats to each table's
- * occupancy.
- */
+// MH-01: a booking adds the assigned seats to each table's occupancy
 function BookTable() {
     const [tables, setTables] = useState<TableDTO[]>([]);
     const [loading, setLoading] = useState(true);
@@ -128,9 +117,6 @@ function BookTable() {
     const validSize = Number.isInteger(size) && size > 0;
     const tooMany = validSize && !loading && size > freeSeats;
 
-    /**
-     * @returns Why a time cannot be chosen, or null if it is available.
-     */
     function unavailableReason(m: MealTime): string | null {
         if (!isBookable(day, m.startsAt)) {
             return "booking closed";
@@ -176,7 +162,7 @@ function BookTable() {
             return;
         }
 
-        // Checked again: time may have passed since the page was opened
+        // Re-checked: time may have passed since the page loaded
         if (!isBookable(day, meal.startsAt)) {
             setError(`Bookings close ${BOOKING_NOTICE_HOURS} hours before the meal. Please choose a later time.`);
             return;
@@ -189,11 +175,10 @@ function BookTable() {
 
         setSubmitting(true);
 
-        // Seats taken so far, to give them back if a later table update fails
+        // Rolled back if a later update fails
         const applied: TableDTO[] = [];
 
         try {
-            // Use the latest occupancy, not the one loaded with the page
             const latest = await getTables({ active: true });
             const assignment = assignTablesToParty(size, toFreeSeats(latest));
 

@@ -16,7 +16,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        {/* Public: hikers book a table (MH-01); no login while it is being tested */}
+        {/* MH-01, public for now */}
         <Route path="/book" element={<BookTable />} />
       </Routes>
     </BrowserRouter>

@@ -1,14 +1,4 @@
-/**
- * Sends a JSON request and returns the parsed response body.
- *
- * On failure, throws an Error carrying the backend's `error` message
- * (e.g. "Table number already exists") together with the status code.
- *
- * @param url - Endpoint URL.
- * @param method - HTTP method.
- * @param body - Optional JSON body.
- * @returns The parsed response body.
- */
+// Throws with the backend's error message and status code
 export async function requestJSON<T>(
     url: string,
     method: string = "GET",
