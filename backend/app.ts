@@ -2,6 +2,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import path from "path";
+import swaggerUi from "swagger-ui-express";
+import swaggerDocument from "./config/mountain-hut-swagger.json";
 import { startServer } from "./connections/PostgreSQL/database";
 import authRoutes from "./routes/authRoutes";
 import reservationRoutes from "./routes/reservationRoutes";
@@ -23,6 +25,12 @@ app.use("/api/v1/tables", tableRoutes);
 
 app.use("/api/v1/slots", slotRoutes);
 app.use("/api/v1/reservations", reservationRoutes);
+
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument)
+);
 
 const PORT = Number(process.env.PORT) || 3000;
 
