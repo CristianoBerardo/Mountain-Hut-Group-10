@@ -10,10 +10,6 @@ jest.mock("../connections/PostgreSQL/database", () => ({
   },
 }));
 
-jest.mock("../test-auth", () => ({
-  testFirebaseAuth: jest.fn(),
-}));
-
 jest.mock("../config/firebaseAdmin", () => ({
   adminAuth: {
     verifyIdToken: jest.fn(),

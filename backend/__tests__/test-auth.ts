@@ -1,5 +1,5 @@
 // Import the configured Firebase Authentication instance.
-import { adminAuth } from "./config/firebaseAdmin";
+import { adminAuth } from "../config/firebaseAdmin";
 
 // Test whether Firebase Admin SDK can generate a custom token.
 export async function testFirebaseAuth() {
