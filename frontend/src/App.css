@@ -629,3 +629,186 @@ p {
 .password-toggle:hover {
   color: #222;
 }
+/* ==========================================
+   BOOK A TABLE (MH-01) — hiker-facing form
+   ========================================== */
+
+.client-booking {
+  display: flex;
+  justify-content: center;
+
+  padding: 56px 20px;
+}
+
+.client-card {
+  display: flex;
+  flex-direction: column;
+
+  gap: 20px;
+  width: min(460px, 100%);
+  padding: 36px 32px;
+
+  text-align: left;
+
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.client-card h1 {
+  margin: 0;
+
+  font-size: 32px;
+  color: var(--text-h);
+  text-align: left;
+}
+
+.client-lead {
+  margin: -8px 0 4px;
+
+  font-size: 16px;
+  color: var(--text);
+}
+
+.client-field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.client-field > span {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.client-field select,
+.client-field input {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+
+  font-size: 17px;
+  font-family: inherit;
+
+  color: var(--text-h);
+  background: var(--background);
+
+  border: 2px solid var(--border);
+  border-radius: 10px;
+
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.client-field select:focus,
+.client-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.12);
+}
+
+.client-field select:disabled {
+  color: #999999;
+  background: #f7f7f8;
+  cursor: not-allowed;
+}
+
+.client-hint {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.client-hint.warning {
+  font-weight: 600;
+  color: var(--error);
+}
+
+.client-error {
+  margin: 0;
+  padding: 12px 14px;
+
+  font-size: 15px;
+
+  color: var(--error);
+  background: var(--error-bg);
+
+  border: 1px solid var(--error-border);
+  border-radius: 10px;
+}
+
+.client-button {
+  min-height: 56px;
+
+  font-size: 18px;
+  font-weight: 600;
+  font-family: inherit;
+
+  color: #ffffff;
+  background: var(--accent);
+
+  border: none;
+  border-radius: 10px;
+
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.client-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(0.92);
+}
+
+.client-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.client-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.client-note {
+  margin: 0;
+
+  font-size: 14px;
+  color: var(--text);
+}
+
+.client-summary {
+  display: flex;
+  flex-direction: column;
+
+  gap: 14px;
+  margin: 0;
+  padding: 18px 20px;
+
+  background: var(--accent-bg);
+  border-radius: 12px;
+}
+
+.client-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.client-summary dt {
+  color: var(--text);
+}
+
+.client-summary dd {
+  margin: 0;
+
+  font-weight: 600;
+  color: var(--text-h);
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  .client-card {
+    padding: 28px 20px;
+  }
+}

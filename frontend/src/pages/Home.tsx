@@ -8,14 +8,11 @@ function Home() {
         <>
             <Navbar />
             <div className="home-container">
-                <h1>Welcome to SE2 Ticketing System</h1>
+                <h1>Welcome to the Mountain Hut</h1>
                 <p>Choose your action below:</p>
                 <div className="button-container">
-                    <button onClick={() => navigate("/get-ticket")} className="nav-button">
-                        Go to Get Ticket Page
-                    </button>
-                    <button onClick={() => navigate("/see-stats")} className="nav-button">
-                        Go to See Stats Page
+                    <button onClick={() => navigate("/book")} className="nav-button">
+                        Book a Table
                     </button>
                 </div>
             </div>
