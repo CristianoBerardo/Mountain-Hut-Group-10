@@ -42,6 +42,8 @@ function Login() {
 
             const tokenWithRole = await credentials.user.getIdToken(true);
 
+            console.log("User logged in successfully:", tokenWithRole);
+
             // Save JWT for subsequent API requests
             sessionStorage.setItem("jwt_token", tokenWithRole);
             sessionStorage.setItem("name", response.user.name);
@@ -78,6 +80,9 @@ function Login() {
                 const tokenWithRole = await credentials.user.getIdToken(true);
 
                 sessionStorage.setItem("jwt_token", tokenWithRole);
+
+                console.log("User logged in successfully:", tokenWithRole);
+
                 sessionStorage.setItem("name", response.user.name);
                 sessionStorage.setItem("role", response.user.role);
 
