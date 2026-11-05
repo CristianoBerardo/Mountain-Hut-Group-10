@@ -16,6 +16,7 @@ function Navbar() {
         sessionStorage.removeItem("jwt_token");
         sessionStorage.removeItem("name");
         sessionStorage.removeItem("role");
+        sessionStorage.removeItem("user_id");
 
         // Redirect to Home
         navigate("/");

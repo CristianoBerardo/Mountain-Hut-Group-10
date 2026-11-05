@@ -48,10 +48,14 @@ export async function getTableById(req: Request, res: Response): Promise<void> {
   }
 }
 
-async function checkTableExists(table_number: Number): Promise<boolean> {
+// excludeId lets an update keep its own table_number
+async function checkTableExists(
+  table_number: Number,
+  excludeId?: string,
+): Promise<boolean> {
   const result = await pool.query(
-    `SELECT * FROM dining_table WHERE table_number = $1`,
-    [table_number],
+    `SELECT * FROM dining_table WHERE table_number = $1 AND id IS DISTINCT FROM $2`,
+    [table_number, excludeId ?? null],
   );
   return result.rows.length > 0;
 }
@@ -147,7 +151,10 @@ export async function updateTable(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    if (table.table_number && (await checkTableExists(table.table_number))) {
+    if (
+      table.table_number &&
+      (await checkTableExists(table.table_number, id))
+    ) {
       res.status(409).json({ error: "Table number already exists" });
       return;
     }

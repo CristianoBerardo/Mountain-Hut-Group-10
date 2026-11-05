@@ -10,8 +10,11 @@ export function getSlots(): Promise<MealSlotDTO[]> {
     return requestJSON<MealSlotDTO[]>("/slots");
 }
 
-/** Capacity summary of every slot that has tables. The backend answers 404 when none exist. */
-export async function getSlotCapacities(): Promise<AvailableSlotDTO[]> {
+/**
+ * Slots that have at least one table, with their seat availability.
+ * The backend answers 404 when there are none: treated as an empty list.
+ */
+export async function getAvailableSlots(): Promise<AvailableSlotDTO[]> {
     try {
         return await requestJSON<AvailableSlotDTO[]>("/slots/available");
     } catch (err) {

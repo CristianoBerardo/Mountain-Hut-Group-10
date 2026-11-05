@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getSlotCapacities, getSlotDetails, getSlots } from "../api/slotAPI";
+import { getAvailableSlots, getSlotDetails, getSlots } from "../api/slotAPI";
 import { getActiveTables } from "../api/tableAPI";
 import Navbar from "../components/Navbar";
 import SlotDetails from "../components/slots/SlotDetails";
@@ -15,7 +15,7 @@ type View = { kind: "create" } | { kind: "details"; slotId: string } | { kind: "
 async function fetchOverview() {
     const [slots, capacityRows, tables] = await Promise.all([
         getSlots(),
-        getSlotCapacities(),
+        getAvailableSlots(),
         getActiveTables(),
     ]);
     const capacities: Record<string, SlotCapacity> = Object.fromEntries(

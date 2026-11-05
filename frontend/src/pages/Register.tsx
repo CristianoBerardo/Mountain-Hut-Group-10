@@ -99,6 +99,7 @@ function Register() {
             sessionStorage.setItem("jwt_token", response.token);
             sessionStorage.setItem("name", response.user.name);
             sessionStorage.setItem("role", response.user.role);
+            sessionStorage.setItem("user_id", response.user.id);
 
             // Navigate to home
             navigate("/", { replace: true });

@@ -1,9 +1,9 @@
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || ""}/api/v1`;
 
 /**
- * Performs a JSON request against the backend API.
+ * Performs a JSON request against the backend API (`path` is relative to /api/v1).
  * Attaches the Firebase JWT stored at login (if any) as a Bearer token and
- * throws an Error carrying the backend's error message on non-2xx responses.
+ * throws an ApiError carrying the backend's error message and status code.
  */
 export async function requestJSON<T>(
     path: string,
@@ -12,6 +12,7 @@ export async function requestJSON<T>(
 ): Promise<T> {
     const headers: Record<string, string> = {};
 
+    // Send the Firebase JWT saved at login, required by protected endpoints
     const token = sessionStorage.getItem("jwt_token");
     if (token) headers.Authorization = `Bearer ${token}`;
     if (body !== undefined) headers["Content-Type"] = "application/json";

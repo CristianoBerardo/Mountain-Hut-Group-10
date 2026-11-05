@@ -13,27 +13,23 @@ function Home() {
             <Navbar />
             <div className="home-container">
                 <h1>Welcome to the Mountain Hut</h1>
-                {isLoggedIn ? (
-                    <>
-                        <p>Choose your action below:</p>
-                        <div className="button-container">
-                            {isStaff(role) && (
-                                <button onClick={() => navigate("/slots")} className="nav-button">
-                                    Manage meal slots
-                                </button>
-                            )}
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <p>Log in to access the Mountain Hut services.</p>
-                        <div className="button-container">
-                            <button onClick={() => navigate("/login")} className="nav-button">
-                                Login
-                            </button>
-                        </div>
-                    </>
-                )}
+                <p>Choose your action below:</p>
+                <div className="button-container">
+                    {/* MH-01: login is required, ProtectedRoute redirects if needed */}
+                    <button onClick={() => navigate("/book")} className="nav-button">
+                        Book a Table
+                    </button>
+                    {isLoggedIn && isStaff(role) && (
+                        <button onClick={() => navigate("/slots")} className="nav-button">
+                            Manage meal slots
+                        </button>
+                    )}
+                    {!isLoggedIn && (
+                        <button onClick={() => navigate("/login")} className="nav-button">
+                            Login
+                        </button>
+                    )}
+                </div>
             </div>
         </>
     );
