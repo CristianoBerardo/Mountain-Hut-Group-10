@@ -1,7 +1,7 @@
 name: Build Project
 
-on: 
-  push:
+on:
+  pull_request:
     branches:
       - staging
   workflow_dispatch:
@@ -10,6 +10,7 @@ on:
         description: "Node.js version to use"
         required: false
         default: "24.x"
+
 jobs:
   build:
     runs-on: ubuntu-latest
