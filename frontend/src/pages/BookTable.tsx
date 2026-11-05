@@ -14,9 +14,6 @@ import {
     isBookable
 } from "../utils/slotFormat";
 
-// Seeded hiker, used while booking works without login
-const TEST_HIKER_ID = "cccccccc-0005-0005-0005-000000000005";
-
 interface Booking {
     slot: AvailableSlotDTO;
     partySize: number;
@@ -146,11 +143,18 @@ function BookTable() {
             return;
         }
 
+        // Set at login: the reservation belongs to the logged-in user
+        const hikerId = sessionStorage.getItem("user_id");
+        if (!hikerId) {
+            setError("Your session is missing your account details. Please log out and log in again.");
+            return;
+        }
+
         setSubmitting(true);
 
         try {
             const result = await createReservation({
-                hiker_id: sessionStorage.getItem("user_id") ?? TEST_HIKER_ID,
+                hiker_id: hikerId,
                 slot_id: slot.slot_id,
                 party_size: size
             });

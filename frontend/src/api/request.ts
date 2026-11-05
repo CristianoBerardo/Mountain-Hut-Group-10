@@ -5,11 +5,16 @@ export async function requestJSON<T>(
     body?: unknown
 ): Promise<T> {
 
+    const headers: Record<string, string> = {};
+
+    // Send the Firebase JWT saved at login, required by protected endpoints
+    const token = sessionStorage.getItem("jwt_token");
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+
     const response = await fetch(url, {
         method,
-        headers: body !== undefined
-            ? { "Content-Type": "application/json" }
-            : undefined,
+        headers,
         body: body !== undefined ? JSON.stringify(body) : undefined
     });
 
