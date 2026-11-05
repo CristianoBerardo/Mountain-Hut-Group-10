@@ -18,9 +18,10 @@ interface SlotFormProps {
     slots: MealSlotDTO[];
     onCreated: (slot: MealSlotDTO, warning?: string) => void;
     onCancel: () => void;
+    onTableCreated: (table: DiningTableDTO) => void;
 }
 
-function SlotForm({ tables, slots, onCreated, onCancel }: SlotFormProps) {
+function SlotForm({ tables, slots, onCreated, onCancel, onTableCreated }: SlotFormProps) {
     const [date, setDate] = useState("");
     const [startsAt, setStartsAt] = useState("");
     const [endsAt, setEndsAt] = useState("");
@@ -115,26 +116,35 @@ function SlotForm({ tables, slots, onCreated, onCancel }: SlotFormProps) {
                 <div className="slot-form-section">
                     <div className="slot-form-section-title">
                         <h3>Tables</h3>
-                        {sortedSlots.length > 0 && (
-                            <label className="copy-from">
-                                <Copy size={15} />
-                                <select
-                                    value={copySource}
-                                    onChange={(e) => handleCopyFrom(e.target.value)}
-                                >
-                                    <option value="">Reuse tables from a previous slot…</option>
-                                    {sortedSlots.map((s) => (
-                                        <option key={s.id} value={s.id}>
-                                            {formatDate(toDateKey(s.date))} ·{" "}
-                                            {formatTime(s.starts_at)}–{formatTime(s.ends_at)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
-                        )}
+                        <p>Select the tables available in this slot.</p>
                     </div>
 
-                    <TablePicker tables={tables} selected={selected} onChange={setSelected} />
+                    {sortedSlots.length > 0 && (
+                        <label className="copy-from">
+                            <span>
+                                <Copy size={14} /> Reuse tables from
+                            </span>
+                            <select
+                                value={copySource}
+                                onChange={(e) => handleCopyFrom(e.target.value)}
+                            >
+                                <option value="">Choose a previous slot…</option>
+                                {sortedSlots.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                        {formatDate(toDateKey(s.date))} ·{" "}
+                                        {formatTime(s.starts_at)}–{formatTime(s.ends_at)}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    )}
+
+                    <TablePicker
+                        tables={tables}
+                        selected={selected}
+                        onChange={setSelected}
+                        onTableCreated={onTableCreated}
+                    />
                 </div>
 
                 {error && (

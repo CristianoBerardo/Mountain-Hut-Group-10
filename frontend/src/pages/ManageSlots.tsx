@@ -118,6 +118,7 @@ function ManageSlots() {
                                 slots={slots}
                                 onCreated={handleCreated}
                                 onCancel={() => setView({ kind: "empty" })}
+                                onTableCreated={(t) => setTables((prev) => [...prev, t])}
                             />
                         )}
 
