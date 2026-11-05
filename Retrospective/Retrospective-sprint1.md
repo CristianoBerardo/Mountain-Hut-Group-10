@@ -17,7 +17,7 @@ sections:
 - Total points committed: 8 + 5 + 13 = 26
 - Total points done: 8 + 5 = 13
 - Nr of hours planned (as a team): 79h
-- Nr of hours spent (as a team): 79h50m
+- Nr of hours spent (as a team): 81h35m
 
 **Remember**  a story is done ONLY if it fits the Definition of Done:
  
@@ -31,8 +31,8 @@ sections:
 
 | Story  | # Tasks | Points | Hours est. | Hours actual |
 |--------|---------|--------|------------|--------------|
-| _#0_   |    10   |    -   |     21h    |    32h50m    |
-|  #1    |    7    |    8   |     24h    |    28h30m    |
+| _#0_   |    10   |    -   |     21h    |    34h05m    |
+|  #1    |    7    |    8   |     24h    |    29h00m    |
 |  #2    |    6    |    5   |  17h30m    |    18h30m    | 
 |  #3    |    8    |    13  |  16h30m    |     0        |
    
@@ -53,11 +53,11 @@ sections:
     - Avg: 1,85
     - StDev: 1,94h
   - Jun Ran Mao:
-    - Avg: 2,67h
-    - StDev: 0,47h
+    - Avg: 1,95h
+    - StDev: 0,98h
 
 - Total task estimation error ratio: sum of total hours estimation / sum of total hours spent -1
- $$\frac{\sum_i estimation_{task_i}}{\sum_i spent_{task_i}} - 1 = \frac{79}{79,83} - 1= -0,01$$
+ $$\frac{\sum_i estimation_{task_i}}{\sum_i spent_{task_i}} - 1 = \frac{79}{81,58} - 1= -0,03$$
 
   
 ## QUALITY MEASURES 
@@ -82,7 +82,7 @@ sections:
 
 - What caused your errors in estimation (if any)?
 
-  Overall, we did not experience any significant errors in our task estimations, as our final numbers were remarkably close to our initial plan. This suggests that our ability to estimate individual tasks is solid but still can be improved because there were some mismatches between the hours estimated per some tasks and the effective ones.
+  Overall, we significantly underestimated many tasks, particularly the initial technical setup and early features. Because these tasks ended up requiring much more time and effort than we originally anticipated, so we exhausted our suggested sprint time and were unfortunately unable to even begin work on Story #3.
 
 - What lessons did you learn (both positive and negative) in this sprint?
 
@@ -96,6 +96,8 @@ sections:
 
 - Improvement goals for the next sprint and how to achieve them (technical tasks, team coordination, etc.)
 
+  - Avoid last-minute rushes: We found ourselves completing critical work and merging branches the night before the deadline. Moving forward, we aim to finish all development and reviews at least one full day before the delivery, allowing us proper time for final checks without stress.
+  
   - Enhance daily punctuality: We want to be more disciplined in meeting our daily task deadlines to avoid bottlenecks at the end of the sprint.
 
   - Increase in-person collaboration: We plan to organize more physical work sessions together. Working individually often resulted in too much time lost trying to realign and integrate our progress; working in the same room should greatly streamline our coordination.
