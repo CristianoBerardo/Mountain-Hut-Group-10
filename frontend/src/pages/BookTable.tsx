@@ -20,10 +20,10 @@ interface Booking {
     tables: AssignedTableDTO[];
 }
 
+// Total seats assigned across all tables, e.g. "3 seats"
 function describeSeats(tables: AssignedTableDTO[]): string {
-    return tables
-        .map((t) => `table ${t.table_number} (${t.seats_assigned} ${t.seats_assigned === 1 ? "seat" : "seats"})`)
-        .join(", ");
+    const seats = tables.reduce((sum, t) => sum + t.seats_assigned, 0);
+    return `${seats} ${seats === 1 ? "seat" : "seats"}`;
 }
 
 function people(count: number): string {
