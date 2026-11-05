@@ -1,0 +1,672 @@
+/* ==========================================
+   MANAGE SLOTS PAGE (MH-02)
+   ========================================== */
+
+.slots-page {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  text-align: left;
+}
+
+.slots-page-header h1 {
+  font-size: 34px;
+  font-weight: 700;
+  margin: 8px 0 6px;
+}
+
+.slots-page-header p {
+  font-size: 16px;
+  margin-bottom: 24px;
+  max-width: 680px;
+}
+
+.slots-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.slots-panel {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.slots-panel h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-h);
+}
+
+.slots-panel h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-h);
+}
+
+/* ---------- Feedback ---------- */
+
+.slots-error,
+.slots-info {
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 12px 0 0;
+}
+
+.slots-error {
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+}
+
+.slots-info {
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.slots-error.banner,
+.slots-info.banner {
+  margin: 0 0 16px;
+}
+
+.slots-empty {
+  font-size: 14px;
+  color: var(--text);
+  margin: 12px 0;
+}
+
+.slots-empty.warn {
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+/* ---------- Buttons ---------- */
+
+.slots-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 8px 18px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    opacity 0.2s;
+}
+
+.slots-btn.small {
+  min-height: 34px;
+  padding: 4px 12px;
+  font-size: 14px;
+}
+
+.slots-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.slots-btn:focus-visible,
+.icon-btn:focus-visible,
+.table-chip:focus-visible,
+.slot-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.slots-btn.primary {
+  color: #fff;
+  background: var(--accent);
+}
+
+.slots-btn.primary:hover:not(:disabled) {
+  background: #4f57e8;
+}
+
+.slots-btn.ghost {
+  color: var(--text);
+  background: transparent;
+}
+
+.slots-btn.ghost:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.slots-btn.danger {
+  color: #fff;
+  background: var(--error);
+}
+
+.slots-btn.danger-outline {
+  color: var(--error);
+  background: transparent;
+  border-color: var(--error-border);
+}
+
+.slots-btn.danger-outline:hover:not(:disabled) {
+  background: var(--error-bg);
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.icon-btn:hover:not(:disabled) {
+  color: var(--error);
+  border-color: var(--error-border);
+  background: var(--error-bg);
+}
+
+.icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ---------- Inputs ---------- */
+
+.slots-page input[type="date"],
+.slots-page input[type="time"],
+.slots-page input[type="number"],
+.slots-page select {
+  min-height: 40px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--text-h);
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.slots-page input:focus,
+.slots-page select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+
+/* ---------- Slot list ---------- */
+
+.slot-list {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.slot-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.slot-day {
+  margin-top: 16px;
+}
+
+.slot-day-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+
+.slot-day ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.slot-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  font-family: inherit;
+  text-align: left;
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+.slot-item:hover {
+  border-color: var(--accent-border);
+}
+
+.slot-item.selected {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.slot-item-time {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.slot-item-meta {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.slot-item-meta.warn {
+  color: #b45309;
+}
+
+/* ---------- Placeholder ---------- */
+
+.slots-placeholder {
+  padding: 32px;
+  font-size: 15px;
+}
+
+/* ---------- Slot form ---------- */
+
+.slot-form-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.slot-form-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.slot-form-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.slot-form-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.copy-from {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+}
+
+.copy-from select {
+  max-width: 300px;
+}
+
+.slot-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* ---------- Table picker ---------- */
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.table-chip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 68px;
+  padding: 12px;
+  font-family: inherit;
+  text-align: left;
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.table-chip:hover {
+  border-color: var(--accent-border);
+}
+
+.table-chip.on {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.table-chip-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #fff;
+  border: 2px solid #d1d5db;
+  border-radius: 5px;
+}
+
+.table-chip.on .table-chip-check {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.table-chip-number {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.table-chip-seats {
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ---------- Slot details ---------- */
+
+.slot-details-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.slot-details-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+
+.slot-details-header h2 {
+  font-size: 28px;
+}
+
+.slot-details-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.slot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.slot-table th {
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  color: var(--text);
+  background: #fafafa;
+  border-bottom: 1px solid var(--border);
+}
+
+.slot-table td {
+  padding: 10px 12px;
+  color: var(--text-h);
+  border-bottom: 1px solid var(--border);
+}
+
+.slot-table td:last-child {
+  width: 48px;
+  text-align: right;
+}
+
+.add-table-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.add-table-row select {
+  flex: 1;
+}
+
+/* ---------- iOS-style time picker ---------- */
+
+.time-picker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.time-picker-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.time-picker-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-h);
+  text-align: left;
+  background: #f2f2f7;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+
+.time-picker-field svg {
+  color: var(--text);
+}
+
+.time-picker-field.empty {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.time-picker-field:hover {
+  background: #e9e9ef;
+}
+
+.time-picker-field.open {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.time-picker-field:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.time-picker-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: 220px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.time-picker-wheels {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Grey band marking the selected row, as on iOS */
+.time-picker-band {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 36px;
+  transform: translateY(-50%);
+  background: #f2f2f7;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.time-wheel {
+  position: relative;
+  z-index: 1;
+  width: 64px;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  box-sizing: border-box;
+  /* fade items toward the top and bottom edges */
+  mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+}
+
+.time-wheel::-webkit-scrollbar {
+  display: none;
+}
+
+.time-wheel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.time-wheel-item {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  color: #9ca3af;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.time-wheel-item.selected {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.time-picker-colon {
+  position: relative;
+  z-index: 1;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.time-picker-done {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.time-picker-done:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 860px) {
+  .slots-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .slot-list {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .slots-page {
+    padding: 16px;
+  }
+
+  .slot-form-row {
+    grid-template-columns: 1fr;
+  }
+
+}
