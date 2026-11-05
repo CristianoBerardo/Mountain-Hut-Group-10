@@ -2,12 +2,15 @@ import type { Config } from "jest";
 
 const config: Config = {
   verbose: true,
-  testMatch: ["**/?(*.)+(test).[jt]s?(x)"], // Matches only *.test.ts and *.test.js
+  testEnvironment: "node",
+  testMatch: ["**/?(*.)+(test).[jt]s?(x)"],
   testPathIgnorePatterns: ["/node_modules/", "/dist/"],
-
-  // collectCoverage: true,
-  // coverageDirectory: '<rootDir>/coverage',
-  // collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
+  transform: {
+    "^.+\\.[tj]sx?$": ["babel-jest", { configFile: "./babel.config.js" }],
+  },
+  transformIgnorePatterns: [
+    "/node_modules/(?!(jose|jwks-rsa|firebase-admin)/)",
+  ],
 };
 
 export default config;
