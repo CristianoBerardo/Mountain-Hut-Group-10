@@ -37,17 +37,40 @@
     "/api/v1/auth/login": {
       "post": {
         "tags": ["Authentication"],
-        "summary": "Login with Email/Password or Google OAuth",
-        "operationId": "login",
+        "summary": "Login and retrieve the user profile",
+        "description": "Verifies the Firebase ID Token, retrieves the user from PostgreSQL and assigns the user's role as a Firebase custom claim.",
+        "operationId": "loginUser",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Successful login"
-          },
-          "400": {
-            "description": "Invalid request"
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Login successful",
+                  "user": {
+                    "id": "uuid",
+                    "name": "John",
+                    "surname": "Smith",
+                    "email": "john@example.com",
+                    "mobileNumber": "123456789",
+                    "notes": null,
+                    "emergencyContact": null,
+                    "role": "HIKER"
+                  }
+                }
+              }
+            }
           },
           "401": {
-            "description": "Unauthorized"
+            "description": "Authorization header missing or invalid"
+          },
+          "404": {
+            "description": "User not found"
           },
           "500": {
             "description": "Internal server error"
@@ -59,13 +82,67 @@
       "post": {
         "tags": ["Authentication"],
         "summary": "Register a new user",
-        "operationId": "register",
+        "description": "Verifies the Firebase ID Token and creates a new user record in PostgreSQL. The default role assigned to new users is HIKER.",
+        "operationId": "registerUser",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "surname",
+                  "email",
+                  "mobile_number"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "John"
+                  },
+                  "surname": {
+                    "type": "string",
+                    "example": "Smith"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "john@example.com"
+                  },
+                  "mobile_number": {
+                    "type": "string",
+                    "example": "123456789"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": null
+                  },
+                  "emergency_contact": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": null
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Successful registration"
+            "description": "User registered successfully"
           },
           "400": {
-            "description": "Invalid request"
+            "description": "Missing required fields"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
           },
           "500": {
             "description": "Internal server error"
@@ -74,50 +151,16 @@
       }
     },
     "/api/v1/tables": {
-      "get": {
-        "tags": [
-          "Tables"
-        ],
-        "summary": "Get all tables, optionally filtered by active status and availability",
-        "operationId": "getTables",
-        "responses": {
-          "200": {
-            "description": "Successful response"
-          },
-          "400": {
-            "description": "Invalid request"
-          },
-          "500": {
-            "description": "Internal server error"
-          }
-        },
-        "parameters": [
-          {
-            "name": "active",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "example": true
-            },
-            "description": "Filter tables by active status."
-          },
-          {
-            "name": "available",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "boolean",
-              "example": true
-            },
-            "description": "Filter tables by availability."
-          }
-        ]
-      },
       "post": {
         "tags": [
           "Tables"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Create a table",
         "operationId": "createTable",
         "responses": {
@@ -148,6 +191,12 @@
         "tags": [
           "Tables"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Get a table by ID",
         "operationId": "getTableById",
         "responses": {
@@ -171,6 +220,12 @@
         "tags": [
           "Tables"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Update a table",
         "operationId": "updateTable",
         "responses": {
@@ -204,6 +259,12 @@
         "tags": [
           "Tables"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Delete a table",
         "operationId": "deleteTable",
         "responses": {
@@ -229,6 +290,12 @@
         "tags": [
           "Tables"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Get a table by table number",
         "operationId": "getTableByTableNumber",
         "responses": {
@@ -254,6 +321,12 @@
         "tags": [
           "Tables"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Reset table occupancy",
         "operationId": "resetTableOccupancy",
         "responses": {
@@ -279,6 +352,12 @@
         "tags": [
           "Reservations"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Get all reservations",
         "operationId": "getReservations",
         "responses": {
@@ -297,6 +376,12 @@
         "tags": [
           "Reservations"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
         "summary": "Create a reservation",
         "operationId": "createReservation",
         "responses": {
@@ -327,6 +412,12 @@
         "tags": [
           "Reservations"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
         "summary": "Get a reservation by ID",
         "operationId": "getReservationById",
         "responses": {
@@ -350,6 +441,12 @@
         "tags": [
           "Reservations"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
         "summary": "Update a reservation",
         "operationId": "updateReservation",
         "responses": {
@@ -383,6 +480,12 @@
         "tags": [
           "Reservations"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
         "summary": "Delete a reservation",
         "operationId": "deleteReservation",
         "responses": {
@@ -408,6 +511,12 @@
         "tags": [
           "Slots"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Get all meal slots",
         "operationId": "getMealSlots",
         "responses": {
@@ -426,6 +535,12 @@
         "tags": [
           "Slots"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Create a meal slot",
         "operationId": "createMealSlot",
         "responses": {
@@ -456,6 +571,12 @@
         "tags": [
           "Slots"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Get a meal slot by ID",
         "operationId": "getMealSlotById",
         "responses": {
@@ -479,6 +600,12 @@
         "tags": [
           "Slots"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Delete a meal slot",
         "operationId": "deleteMealSlot",
         "responses": {
@@ -504,6 +631,12 @@
         "tags": [
           "Slots"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Get meal slot details",
         "operationId": "getMealSlotDetails",
         "responses": {
@@ -529,6 +662,12 @@
         "tags": [
           "Slots"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["HIKER", "EMPLOYEE", "WARDEN"],
         "summary": "Get available meal slots",
         "operationId": "getAvailableSlots",
         "responses": {
@@ -549,6 +688,12 @@
         "tags": [
           "Slots"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Add a table to a meal slot",
         "operationId": "addTableToSlot",
         "responses": {
@@ -584,6 +729,12 @@
         "tags": [
           "Slots"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Remove a table from a meal slot",
         "operationId": "removeTableFromSlot",
         "responses": {
@@ -619,6 +770,12 @@
         "tags": [
           "Users"
         ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
         "summary": "Get users",
         "operationId": "getUsers",
         "responses": {
@@ -866,6 +1023,14 @@
           "type": "integer",
           "example": 1
         }
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Insert the Firebase Token"
       }
     }
   }

@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import express from "express";
 import path from "path";
 import swaggerUi from "swagger-ui-express";
-import swaggerDocument from "./config/mountain-hut-swagger.json";
+import { swaggerConfig } from "./config/swagger-config";
 import { startServer } from "./connections/PostgreSQL/database";
 import authRoutes from "./routes/authRoutes";
 import reservationRoutes from "./routes/reservationRoutes";
@@ -29,7 +29,7 @@ app.use("/api/v1/reservations", reservationRoutes);
 app.use(
   "/api-docs",
   swaggerUi.serve,
-  swaggerUi.setup(swaggerDocument)
+  swaggerUi.setup(swaggerConfig)
 );
 
 const PORT = Number(process.env.PORT) || 3000;
