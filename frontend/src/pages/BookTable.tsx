@@ -30,10 +30,10 @@ function people(count: number): string {
     return `${count} ${count === 1 ? "person" : "people"}`;
 }
 
-// Strips the status code added by requestJSON, e.g. "... (409)"
+// Backend error message (requestJSON throws ApiError with the server's text)
 function serverMessage(err: unknown): string {
     return err instanceof Error
-        ? err.message.replace(/ \(\d{3}\)$/, "")
+        ? err.message
         : "Sorry, your booking could not be completed. Please try again.";
 }
 

@@ -1,8 +1,46 @@
-import type { AvailableSlotDTO } from "../dto/SlotDTO";
-import { requestJSON } from "./request";
+import type {
+    AvailableSlotDTO,
+    CreateMealSlotDTO,
+    MealSlotDTO,
+    MealSlotDetailsDTO,
+} from "../dto/SlotDTO";
+import { ApiError, requestJSON } from "./request";
 
-const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || ""}/api/v1/slots`;
+export function getSlots(): Promise<MealSlotDTO[]> {
+    return requestJSON<MealSlotDTO[]>("/slots");
+}
 
+/**
+ * Slots that have at least one table, with their seat availability.
+ * The backend answers 404 when there are none: treated as an empty list.
+ */
 export async function getAvailableSlots(): Promise<AvailableSlotDTO[]> {
-    return requestJSON<AvailableSlotDTO[]>(`${API_BASE_URL}/available`);
+    try {
+        return await requestJSON<AvailableSlotDTO[]>("/slots/available");
+    } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return [];
+        throw err;
+    }
+}
+
+export function getSlotDetails(slotId: string): Promise<MealSlotDetailsDTO> {
+    return requestJSON<MealSlotDetailsDTO>(`/slots/${slotId}/details`);
+}
+
+export function createSlot(body: CreateMealSlotDTO): Promise<MealSlotDTO> {
+    return requestJSON<MealSlotDTO>("/slots", "POST", body);
+}
+
+export function deleteSlot(slotId: string): Promise<{ message: string }> {
+    return requestJSON(`/slots/${slotId}`, "DELETE");
+}
+
+export function addTableToSlot(slotId: string, diningTableId: string): Promise<unknown> {
+    return requestJSON(`/slots/${slotId}/tables`, "POST", {
+        dining_table_id: diningTableId,
+    });
+}
+
+export function removeTableFromSlot(slotId: string, diningTableId: string): Promise<unknown> {
+    return requestJSON(`/slots/${slotId}/tables/${diningTableId}`, "DELETE");
 }

@@ -14,7 +14,9 @@ VALUES
     ('firebase-operator1-uid', 'Operator1', 'User', 'operator1@example.com', '3333333333', NULL, '3333333334', 'EMPLOYEE'),
     ('firebase-operator2-uid', 'Operator2', 'User', 'operator2@example.com', '4444444444', NULL, '4444444445', 'WARDEN'),
     ('firebase-operator3-uid', 'Operator3', 'User', 'operator3@example.com', '5555555555', NULL, '5555555556', 'HIKER'),
-    ('ttaYYFmOa3TYYVdGby6k5LS0kc12', 'Isabella', 'Rossi', 'isabella@example.com', '6666666666', NULL, '6666666667', 'EMPLOYEE');
+    ('ttaYYFmOa3TYYVdGby6k5LS0kc12', 'Isabella', 'Rossi', 'isabella@example.com', '6666666666', NULL, '6666666667', 'EMPLOYEE'),
+    -- Test employee, login in DEV.md > "Test accounts"
+    ('b8LlOMlDidUE1bvn0ihxOGkO2oz1', 'Employee', 'Test', 'e@e.com', '3334445555', NULL, NULL, 'EMPLOYEE');
 
 INSERT INTO dining_table (table_number, capacity)
 VALUES
