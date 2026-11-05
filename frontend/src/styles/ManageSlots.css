@@ -329,7 +329,8 @@
   font-size: 13px;
 }
 
-/* "Reuse tables from" sits on its own row between the title and the grid */
+/* "Reuse tables from" sits on its own row between the title and the grid.
+   TODO(MH-09): currently unused, the control is commented out in SlotForm. */
 .copy-from {
   display: flex;
   align-items: center;
