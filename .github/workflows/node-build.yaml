@@ -1,0 +1,29 @@
+name: Build Project
+
+on: 
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+    inputs:
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        default: "24.x"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ github.event.inputs.node-version || '24.x' }}
+
+      - name: Install dependencies
+        run: npm run install:all
+
+      - name: Run build script
+        run: npm run build
