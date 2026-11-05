@@ -170,6 +170,12 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -206,6 +212,12 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -234,6 +246,12 @@
           },
           "400": {
             "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
           },
           "500": {
             "description": "Internal server error"
@@ -274,6 +292,12 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -304,6 +328,12 @@
           },
           "400": {
             "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
           },
           "500": {
             "description": "Internal server error"
@@ -336,6 +366,12 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -367,6 +403,12 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -390,6 +432,9 @@
           },
           "400": {
             "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
           },
           "500": {
             "description": "Internal server error"
@@ -427,6 +472,9 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -455,6 +503,9 @@
           },
           "400": {
             "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
           },
           "500": {
             "description": "Internal server error"
@@ -495,6 +546,9 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -526,6 +580,12 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -549,6 +609,12 @@
           },
           "400": {
             "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
           },
           "500": {
             "description": "Internal server error"
@@ -586,6 +652,12 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -614,6 +686,12 @@
           },
           "400": {
             "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
           },
           "500": {
             "description": "Internal server error"
@@ -646,6 +724,12 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -677,6 +761,9 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -702,6 +789,12 @@
           },
           "400": {
             "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
           },
           "500": {
             "description": "Internal server error"
@@ -744,6 +837,12 @@
           "400": {
             "description": "Invalid request"
           },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -784,6 +883,12 @@
           },
           "400": {
             "description": "Invalid request"
+          },
+          "401": {
+            "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: User does not have the required role"
           },
           "500": {
             "description": "Internal server error"

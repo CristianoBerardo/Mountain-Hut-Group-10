@@ -8,18 +8,21 @@ import {
   resetTableOccupancy,
   updateTable,
 } from "../controllers/tableController";
+import { authenticateToken } from "../middleware/authenticateToken";
+import { authorizeRole } from "../middleware/authorizeRole";
+import { UserRole } from "../types/UserRole";
 
 const router = Router();
 
-router.get("/", getTables);
-router.get("/:id", getTableById);
-router.get("/number/:table_number", getTableByTableNumber);
-router.patch("/:id/reset", resetTableOccupancy);
+router.get("/", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), getTables);
+router.get("/:id", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), getTableById);
+router.get("/number/:table_number", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), getTableByTableNumber);
+router.patch("/:id/reset", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), resetTableOccupancy);
 
-router.post("/", createTable);
+router.post("/", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), createTable);
 
-router.patch("/:id", updateTable);
+router.patch("/:id", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), updateTable);
 
-router.delete("/:id", deleteTable);
+router.delete("/:id", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), deleteTable);
 
 export default router;

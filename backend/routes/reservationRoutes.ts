@@ -6,16 +6,19 @@ import {
   getReservations,
   updateReservation,
 } from "../controllers/reservationController";
+import { authenticateToken } from "../middleware/authenticateToken";
+import { authorizeRole } from "../middleware/authorizeRole";
+import { UserRole } from "../types/UserRole";
 
 const router = Router();
 
-router.get("/", getReservations);
-router.get("/:id", getReservationById);
+router.get("/", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), getReservations);
+router.get("/:id", authenticateToken, authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN), getReservationById);
 
-router.post("/", createReservationV2);
+router.post("/", authenticateToken, authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN), createReservationV2);
 
-router.patch("/:id", updateReservation);
+router.patch("/:id", authenticateToken, authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN), updateReservation);
 
-router.delete("/:id", deleteReservation);
+router.delete("/:id", authenticateToken, authorizeRole(UserRole.HIKER,UserRole.EMPLOYEE, UserRole.WARDEN), deleteReservation);
 
 export default router;
