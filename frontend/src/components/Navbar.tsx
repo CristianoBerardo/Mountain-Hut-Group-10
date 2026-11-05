@@ -1,5 +1,6 @@
 import { MdLogin, MdLogout } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
+import { isStaff } from "../utils/roles";
 
 function Navbar() {
     const navigate = useNavigate();
@@ -21,9 +22,16 @@ function Navbar() {
     }
     return (
         <nav className="navbar">
-        <Link to="/" className="navbar-home-button">
-            Home
-        </Link>
+        <div className="navbar-links">
+            <Link to="/" className="navbar-home-button">
+                Home
+            </Link>
+            {isLoggedIn && isStaff(role) && (
+                <Link to="/slots" className="navbar-home-button">
+                    Meal slots
+                </Link>
+            )}
+        </div>
         {isLoggedIn ? (
             <button
                 type="button"
