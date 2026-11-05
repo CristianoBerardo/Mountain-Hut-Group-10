@@ -133,3 +133,15 @@ Navigate to [http://localhost:8080](http://localhost:8080) in your browser:
 - **Username**: `admin`
 - **Password**: `admin`
 - **Database**: `admin`
+
+---
+
+## Test accounts
+
+Firebase users linked to a row in `backend/connections/PostgreSQL/seed/seed.sql` (same email, same Firebase UID). The role comes from the seed row.
+
+| Role     | Email     | Password  |
+| -------- | --------- | --------- |
+| EMPLOYEE | `e@e.com` | `e@e.com` |
+
+> The seed only runs when the database is created. If your database already existed, [reset it](#reset-the-database) to get these accounts.
