@@ -329,8 +329,7 @@
   font-size: 13px;
 }
 
-/* "Reuse tables from" sits on its own row between the title and the grid.
-   TODO(MH-09): currently unused, the control is commented out in SlotForm. */
+/* "Reuse tables from" sits on its own row between the title and the grid */
 .copy-from {
   display: flex;
   align-items: center;
@@ -460,10 +459,14 @@
 
 /* ---------- Dialog ---------- */
 
+/* Always light: index.css sets `color-scheme: light dark`, which would otherwise
+   give the native <dialog> and its inputs dark system colours in dark mode. */
 .slots-dialog {
+  color-scheme: light;
   width: min(420px, calc(100vw - 32px));
   padding: 0;
-  color: var(--text-h);
+  color: #222222;
+  background: #ffffff;
   text-align: left;
   border: none;
   border-radius: 16px;
@@ -520,7 +523,8 @@
   padding: 6px 10px;
   font-family: inherit;
   font-size: 15px;
-  color: var(--text-h);
+  color: #222222;
+  background: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 8px;
 }

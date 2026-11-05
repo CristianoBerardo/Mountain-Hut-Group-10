@@ -1,11 +1,9 @@
-// TODO(MH-09): restore these imports with the "Reuse tables from" feature below
-// import { Copy } from "lucide-react";
-// import { getSlotDetails } from "../../api/slotAPI";
-// import { formatDate, formatTime, toDateKey } from "../../utils/slotFormat";
+import { Copy } from "lucide-react";
 import { useState } from "react";
-import { addTableToSlot, createSlot } from "../../api/slotAPI";
+import { addTableToSlot, createSlot, getSlotDetails } from "../../api/slotAPI";
 import type { MealSlotDTO } from "../../dto/SlotDTO";
 import type { DiningTableDTO } from "../../dto/TableDTO";
+import { formatDate, formatTime, toDateKey } from "../../utils/slotFormat";
 import TablePicker from "./TablePicker";
 import TimePicker from "./TimePicker";
 
@@ -17,33 +15,26 @@ function nextHour(time: string): string {
 
 interface SlotFormProps {
     tables: DiningTableDTO[];
-    /** Existing slots. TODO(MH-09): used by "Reuse tables from", currently disabled. */
     slots: MealSlotDTO[];
     onCreated: (slot: MealSlotDTO, warning?: string) => void;
     onCancel: () => void;
     onTableCreated: (table: DiningTableDTO) => void;
 }
 
-function SlotForm({ tables, onCreated, onCancel, onTableCreated }: SlotFormProps) {
+function SlotForm({ tables, slots, onCreated, onCancel, onTableCreated }: SlotFormProps) {
     const [date, setDate] = useState("");
     const [startsAt, setStartsAt] = useState("");
     const [endsAt, setEndsAt] = useState("");
     const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [copySource, setCopySource] = useState("");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
-
-    /*
-     * TODO(MH-09): "Reuse tables from a previous slot" — postponed to MH-09 (repeat a weekly schedule).
-     * To restore: uncomment this block, the imports above, the JSX in the Tables section,
-     * and add `slots` back to the destructured props.
-     *
-    const [copySource, setCopySource] = useState("");
 
     const sortedSlots = [...slots].sort((a, b) =>
         `${toDateKey(b.date)} ${b.starts_at}`.localeCompare(`${toDateKey(a.date)} ${a.starts_at}`),
     );
 
-    // GET /slots/:id/details -> preselect the same tables
+    // GET /slots/:id/details -> preselect the same tables (MH-02: reuse a previous table list)
     async function handleCopyFrom(slotId: string) {
         setCopySource(slotId);
         setError("");
@@ -57,7 +48,6 @@ function SlotForm({ tables, onCreated, onCancel, onTableCreated }: SlotFormProps
             setError(err instanceof Error ? err.message : "Could not load tables of that slot");
         }
     }
-    */
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -129,7 +119,6 @@ function SlotForm({ tables, onCreated, onCancel, onTableCreated }: SlotFormProps
                         <p>Select the tables available in this slot.</p>
                     </div>
 
-                    {/* TODO(MH-09): "Reuse tables from a previous slot", restore with handleCopyFrom above
                     {sortedSlots.length > 0 && (
                         <label className="copy-from">
                             <span>
@@ -149,7 +138,6 @@ function SlotForm({ tables, onCreated, onCancel, onTableCreated }: SlotFormProps
                             </select>
                         </label>
                     )}
-                    */}
 
                     <TablePicker
                         tables={tables}
