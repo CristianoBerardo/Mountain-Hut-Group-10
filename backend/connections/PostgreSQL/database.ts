@@ -1,10 +1,14 @@
 import dotenv from "dotenv";
 import path from "path";
-import { Pool } from "pg";
+import { Pool, types } from "pg";
 
 // Carica il file .env dalla root del progetto (Single Source of Truth)
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 dotenv.config(); // fallback su eventuale file locale
+
+// Return DATE columns (OID 1082) as plain 'YYYY-MM-DD' strings instead of JS Date
+// objects, so they are not shifted by the server timezone when serialized to JSON.
+types.setTypeParser(1082, (value: string) => value);
 
 // PostgreSQL connection pool configuration using environment variables
 export const pool = new Pool({

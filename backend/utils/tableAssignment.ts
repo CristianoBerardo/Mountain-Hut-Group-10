@@ -1,7 +1,7 @@
 import { TableAssignmentResult, TableAvailability } from "../types/reservationTypes";
 
 export function assignTablesToParty(partySize: number, tables: TableAvailability[]): TableAssignmentResult[] {
-    if (partySize <= 0) {
+    if (!Number.isInteger(partySize) || partySize <= 0) {
         throw new Error("INVALID_PARTY_SIZE");
     }
 
@@ -25,11 +25,6 @@ export function assignTablesToParty(partySize: number, tables: TableAvailability
     }
 
     //caso 2: splitting su più tavoli
-    const totalFreeSeats = validTables.reduce((sum, t) => sum + t.freeSeats, 0);
-    if (totalFreeSeats < partySize) {
-        throw new Error("INSUFFICIENT_CAPACITY");
-    }
-
     const optimalCombination = findOptimalTableCombination(validTables, partySize);
     if (!optimalCombination) {
         throw new Error("INSUFFICIENT_CAPACITY");
@@ -42,7 +37,6 @@ export function assignTablesToParty(partySize: number, tables: TableAvailability
     let remainingToSeat = partySize;
 
     for (const table of optimalCombination) {
-        if (remainingToSeat <= 0) break;
         const seatsToAssign = Math.min(table.freeSeats, remainingToSeat);
         assignments.push({
             tableId: table.tableId,

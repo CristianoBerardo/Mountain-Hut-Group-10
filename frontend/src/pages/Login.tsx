@@ -48,6 +48,7 @@ function Login() {
             sessionStorage.setItem("jwt_token", tokenWithRole);
             sessionStorage.setItem("name", response.user.name);
             sessionStorage.setItem("role", response.user.role);
+            sessionStorage.setItem("user_id", response.user.id);
 
             navigate(from, { replace: true });
 
@@ -85,6 +86,7 @@ function Login() {
 
                 sessionStorage.setItem("name", response.user.name);
                 sessionStorage.setItem("role", response.user.role);
+            sessionStorage.setItem("user_id", response.user.id);
 
                 navigate(from, { replace: true });
             }
