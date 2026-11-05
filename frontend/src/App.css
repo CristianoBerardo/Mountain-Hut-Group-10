@@ -629,6 +629,12 @@ p {
 .password-toggle:hover {
   color: #222;
 }
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 /* ==========================================
    BOOK A TABLE (MH-01)
    ========================================== */

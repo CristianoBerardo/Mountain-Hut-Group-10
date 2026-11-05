@@ -7,7 +7,9 @@ import ProtectedRoute from './components/ProtectedRoute'
 import BookTable from './pages/BookTable'
 import Home from './pages/Home'
 import Login from './pages/Login'
+import ManageSlots from './pages/ManageSlots'
 import Register from './pages/Register'
+import { BOOK_TABLE_ROLES, MANAGE_SLOTS_ROLES } from './utils/roles'
 
 function App() {
 
@@ -17,12 +19,21 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        {/* MH-01: booking requires a logged-in user (the reservation's hiker) */}
+        {/* MH-01: only hikers can book a table */}
         <Route
           path="/book"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={BOOK_TABLE_ROLES}>
               <BookTable />
+            </ProtectedRoute>
+          }
+        />
+        {/* MH-02: only employees define slot capacity */}
+        <Route
+          path="/slots"
+          element={
+            <ProtectedRoute allowedRoles={MANAGE_SLOTS_ROLES}>
+              <ManageSlots />
             </ProtectedRoute>
           }
         />
