@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { isStaff } from "../utils/roles";
+import { canBookTable, canManageSlots } from "../utils/roles";
 
 function Home() {
     const navigate = useNavigate();
@@ -15,11 +15,12 @@ function Home() {
                 <h1>Welcome to the Mountain Hut</h1>
                 <p>Choose your action below:</p>
                 <div className="button-container">
-                    {/* MH-01: login is required, ProtectedRoute redirects if needed */}
-                    <button onClick={() => navigate("/book")} className="nav-button">
-                        Book a Table
-                    </button>
-                    {isLoggedIn && isStaff(role) && (
+                    {isLoggedIn && canBookTable(role) && (
+                        <button onClick={() => navigate("/book")} className="nav-button">
+                            Book a Table
+                        </button>
+                    )}
+                    {isLoggedIn && canManageSlots(role) && (
                         <button onClick={() => navigate("/slots")} className="nav-button">
                             Manage meal slots
                         </button>
