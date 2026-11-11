@@ -1,141 +1,181 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { adminAuth } from "../config/firebaseAdmin";
-import { pool } from "../connections/PostgreSQL/database";
+import {
+  AppError,
+  InternalServerError,
+  InvalidRequestError,
+  NotFoundError,
+  TokenMissingOrInvalidError,
+} from "../errors/AppError";
 import { UserRepository } from "../repository/UserRepository";
-import { createHikerDTO } from "../types/UserDTOType";
+import { createHikerDTO, UserDTO } from "../types/UserDTOType";
 import { UserRole } from "../types/UserRole";
-import { HikerDTO } from "../models/dto/HikerDTO";
 
-export async function loginUser(req: Request, res: Response): Promise<void> {
-  try {
-    const authHeader = req.headers.authorization;
+export class AuthController {
+  private readonly userRepository: UserRepository;
 
-    if (!authHeader?.startsWith("Bearer ")) {
-      res
-        .status(401)
-        .json({ error: "Authorization header missing or invalid" });
-      return;
-    }
-
-    const decodedToken = await adminAuth.verifyIdToken(
-      authHeader?.split(" ")[1] || "",
-    );
-
-    const decodedUID = decodedToken.uid;
-
-    // Find the user in the database
-    const result = await pool.query(
-      `SELECT id, name, surname, email, mobile_number, notes, emergency_contact, role FROM "user" WHERE firebase_uid = $1`,
-      [decodedUID],
-    );
-    console.log("User from database:", result.rows[0]);
-    const user = result.rows[0];
-
-    // If the user is not found, return a 404 error
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-
-    // Add custom claims
-    const tokenWithRole = await adminAuth.setCustomUserClaims(
-      decodedToken.uid,
-      {
-        role: user.role as UserRole,
-      },
-    );
-
-    res.status(200).json({
-      message: "Login successful",
-      token: tokenWithRole,
-      user: {
-        id: user.id,
-        name: user.name,
-        surname: user.surname,
-        email: user.email,
-        mobileNumber: user.mobile_number,
-        notes: user.notes,
-        emergencyContact: user.emergency_contact,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error("Error logging in user:", error);
-    res.status(500).json({ error: "Internal server error" });
+  constructor() {
+    this.userRepository = new UserRepository();
   }
-}
 
-export async function registerUser(req: Request, res: Response): Promise<void> {
-  try {
-    const authHeader = req.headers.authorization;
+  async loginUser(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      // Authentication is performed once by authenticateToken before this handler.
+      const { firebaseUid, token } = this.getAuthenticationContext(req, res);
+      const user = await this.userRepository.getUserByFirebaseUid({
+        firebase_uid: firebaseUid,
+      });
 
-    const userRepository = new UserRepository();
+      // Updating custom claims does not return or refresh an ID token.
+      // The client must call getIdToken(true) to receive the updated role claim.
+      await adminAuth.setCustomUserClaims(firebaseUid, { role: user.role });
 
-    if (!authHeader?.startsWith("Bearer ")) {
-      res
-        .status(401)
-        .json({ error: "Authorization header missing or invalid" });
-      return;
+      res.status(200).json({
+        message: "Login successful",
+        token,
+        user: this.toAuthUserResponse(user),
+      });
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        next(
+          new NotFoundError(
+            "No registered user was found for this Firebase account.",
+          ),
+        );
+        return;
+      }
+
+      if (error instanceof AppError) {
+        next(error);
+        return;
+      }
+
+      console.error("Login failed:", error);
+      next(
+        new InternalServerError("Unable to log in. Please try again later."),
+      );
     }
+  }
 
-    const decodedToken = await adminAuth.verifyIdToken(
-      authHeader?.split(" ")[1] || "",
-    );
+  async registerUser(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const { firebaseUid, token } = this.getAuthenticationContext(req, res);
+      const body: unknown = req.body;
 
-    const decodedUID = decodedToken.uid;
+      if (body === null || typeof body !== "object" || Array.isArray(body)) {
+        throw new InvalidRequestError(
+          "The request body must be a JSON object.",
+        );
+      }
 
-    // Validate required fields
+      const data = body as Record<string, unknown>;
+
+      // Identity and role are determined by the server, never by request fields.
+      const newUser: createHikerDTO = {
+        firebase_uid: firebaseUid,
+        name: this.requiredString(data, "name"),
+        surname: this.requiredString(data, "surname"),
+        email: this.requiredString(data, "email"),
+        mobile_number: this.requiredString(data, "mobile_number"),
+        notes: this.optionalString(data, "notes"),
+        emergency_contact: this.optionalString(data, "emergency_contact"),
+        role: UserRole.HIKER,
+      };
+
+      const user = await this.userRepository.createHiker({ user: newUser });
+
+      // Keep the existing response status and field names used by the frontend.
+      res.status(200).json({
+        message: "Registration successful",
+        token,
+        user: this.toAuthUserResponse(user),
+      });
+    } catch (error) {
+      // Preserve repository errors, including conflicts, for the shared handler.
+      if (error instanceof AppError) {
+        next(error);
+        return;
+      }
+
+      console.error("Registration failed:", error);
+      next(
+        new InternalServerError(
+          "Unable to register the hiker. Please try again later.",
+        ),
+      );
+    }
+  }
+
+  private getAuthenticationContext(
+    req: Request,
+    res: Response,
+  ): { firebaseUid: string; token: string } {
+    const match = req.headers.authorization?.match(/^Bearer[ \t]+(\S+)$/i);
+    const firebaseUid: unknown = res.locals.user?.uid;
+
+    // Only use the UID saved by the token verification middleware.
     if (
-      !req.body.name ||
-      !req.body.surname ||
-      !req.body.email ||
-      !req.body.mobile_number
+      !match ||
+      typeof firebaseUid !== "string" ||
+      firebaseUid.trim().length === 0
     ) {
-      res.status(400).json({ error: "Missing required fields" });
-      return;
+      throw new TokenMissingOrInvalidError();
     }
 
-    const newUser: createHikerDTO = {
-      firebase_uid: decodedUID,
-      name: req.body.name,
-      surname: req.body.surname ?? null,
-      email: req.body.email,
-      mobile_number: req.body.mobile_number ?? null,
-      notes: req.body.notes ?? null,
-      emergency_contact: req.body.emergency_contact ?? null,
-      role: UserRole.HIKER,
+    return { firebaseUid, token: match[1] };
+  }
+
+  private requiredString(data: Record<string, unknown>, field: string): string {
+    const value = data[field];
+
+    if (typeof value !== "string" || value.trim().length === 0) {
+      throw new InvalidRequestError(`"${field}" must be a non-empty string.`);
+    }
+
+    return value.trim();
+  }
+
+  private optionalString(
+    data: Record<string, unknown>,
+    field: string,
+  ): string | undefined {
+    const value = data[field];
+
+    // Optional database fields may be omitted or explicitly sent as null.
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    if (typeof value !== "string") {
+      throw new InvalidRequestError(
+        `"${field}" must be a string when provided.`,
+      );
+    }
+
+    return value.trim();
+  }
+
+  private toAuthUserResponse(user: UserDTO) {
+    const hiker = user.role === UserRole.HIKER ? user : undefined;
+
+    // Preserve the authentication API's camelCase fields for all three roles.
+    return {
+      id: user.id,
+      name: user.name,
+      surname: hiker?.surname ?? null,
+      email: user.email,
+      mobileNumber: hiker?.mobile_number ?? null,
+      notes: hiker?.notes ?? null,
+      emergencyContact: hiker?.emergency_contact ?? null,
+      role: user.role,
     };
-
-    // Insert user into PostgreSQL
-    const result = await userRepository.createHiker({
-      user: newUser,
-    });
-
-    console.log("User from database:", result);
-    const user: HikerDTO = result;
-
-    // If the user is not found, return a 404 error
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-
-    res.status(200).json({
-      message: "Login successful",
-      token: authHeader.split(" ")[1],
-      user: {
-        id: user.id,
-        name: user.name,
-        surname: user.surname,
-        email: user.email,
-        mobileNumber: user.mobile_number,
-        notes: user.notes,
-        emergencyContact: user.emergency_contact,
-        role: user.role,
-      },
-    });
-  } catch (error) {
-    console.error("Error logging in user:", error);
-    res.status(500).json({ error: "Internal server error" });
   }
 }

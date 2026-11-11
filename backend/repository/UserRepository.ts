@@ -1,5 +1,10 @@
 import { pool } from "../connections/PostgreSQL/database";
-import { InternalServerError, NotFoundError } from "../errors/AppError";
+import {
+  AppError,
+  ConflictError,
+  InternalServerError,
+  NotFoundError,
+} from "../errors/AppError";
 import { BaseUserDTO } from "../models/dto/BaseUserDTO";
 import { HikerDTO } from "../models/dto/HikerDTO";
 import { createHikerDTO, UserDTO } from "../types/UserDTOType";
@@ -103,8 +108,8 @@ export class UserRepository {
           user.surname,
           user.email,
           user.mobile_number,
-          user.notes,
-          user.emergency_contact,
+          user.notes ?? null,
+          user.emergency_contact ?? null,
           UserRole.HIKER,
         ],
       );
@@ -121,8 +126,25 @@ export class UserRepository {
 
       return hiker;
     } catch (error) {
+      // Preserve application errors raised while mapping the created profile.
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      // PostgreSQL enforces unique Firebase UIDs and email addresses atomically.
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505"
+      ) {
+        throw new ConflictError(
+          "A user with this Firebase UID or email address already exists.",
+        );
+      }
+
       console.error("Error creating user:", error);
-      throw new InternalServerError("Error creating user");
+      throw new InternalServerError("Unable to create the hiker account.");
     }
   }
 
