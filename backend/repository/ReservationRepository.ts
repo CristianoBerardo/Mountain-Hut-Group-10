@@ -1,9 +1,9 @@
+import { PoolClient } from "pg";
 import { pool } from "../connections/PostgreSQL/database";
 import { InvalidRequestError, NotFoundError } from "../errors/AppError";
-import { throwRepositoryError } from "./repositoryErrors";
-import { PoolClient } from "pg";
 import { CreateReservationDTO } from "../models/dto/ReservationDTO";
 import { MealReservation } from "../models/MealReservation";
+import { throwRepositoryError } from "./utils/repositoryErrors";
 
 type TableRow = {
   dining_table_id: string;

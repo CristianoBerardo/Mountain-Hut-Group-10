@@ -4,8 +4,8 @@ import {
   InvalidRequestError,
   NotFoundError,
 } from "../errors/AppError";
-import { throwRepositoryError } from "./repositoryErrors";
 import { DiningTableDTO } from "../models/dto/DiningTableDTO";
+import { throwRepositoryError } from "./utils/repositoryErrors";
 
 export class TableRepository {
   /** List dining tables using optional active and availability filters. */

@@ -1,10 +1,7 @@
 import { pool } from "../connections/PostgreSQL/database";
-import {
-  AppError,
-  InternalServerError,
-  NotFoundError,
-} from "../errors/AppError";
+import { NotFoundError } from "../errors/AppError";
 import { AvailableTableSlotDTO } from "../models/dto/AvailableTableSlotDTO";
+import { throwRepositoryError } from "./utils/repositoryErrors";
 
 export class SlotsTableRepository {
   /** Retrieve slots configured with active dining tables and their seat counts. */
@@ -64,13 +61,8 @@ export class SlotsTableRepository {
 
       return result.rows;
     } catch (error) {
-      // Preserve application errors so the shared handler keeps their HTTP status.
-      if (error instanceof AppError) {
-        throw error;
-      }
-
-      console.error("Failed to retrieve available meal slots:", error);
-      throw new InternalServerError(
+      return throwRepositoryError(
+        error,
         "Unable to retrieve available meal slots. Please try again later.",
       );
     }

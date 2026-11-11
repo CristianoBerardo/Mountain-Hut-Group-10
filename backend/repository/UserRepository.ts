@@ -1,14 +1,11 @@
 import { pool } from "../connections/PostgreSQL/database";
-import {
-  AppError,
-  ConflictError,
-  InternalServerError,
-  NotFoundError,
-} from "../errors/AppError";
+import { InternalServerError, NotFoundError } from "../errors/AppError";
 import { BaseUserDTO } from "../models/dto/BaseUserDTO";
 import { HikerDTO } from "../models/dto/HikerDTO";
 import { createHikerDTO, UserDTO } from "../types/UserDTOType";
 import { UserRole } from "../types/UserRole";
+import { requiredString } from "../utils/requestValidation";
+import { throwRepositoryError } from "./utils/repositoryErrors";
 
 interface UserRow extends BaseUserDTO {
   role: string;
@@ -31,11 +28,14 @@ export class UserRepository {
 
     switch (row.role) {
       case UserRole.HIKER:
+        // Invalid stored data is a server error, not a request validation error.
         if (
           typeof row.surname !== "string" ||
           typeof row.mobile_number !== "string"
         ) {
-          throw new InternalServerError("Missing required hiker fields");
+          throw new InternalServerError(
+            "The stored hiker profile is missing required fields.",
+          );
         }
 
         return {
@@ -51,7 +51,9 @@ export class UserRepository {
       case UserRole.WARDEN:
         return { ...base, role: UserRole.WARDEN };
       default:
-        throw new InternalServerError("Role not found");
+        throw new InternalServerError(
+          "The stored user has an unsupported role.",
+        );
     }
   }
 
@@ -65,12 +67,7 @@ export class UserRepository {
 
       return result.rows.map((row) => this.toUserDTO(row));
     } catch (error) {
-      if (error instanceof NotFoundError) {
-        throw error;
-      }
-
-      console.error("Error retrieving users:", error);
-      throw new InternalServerError();
+      return throwRepositoryError(error, "Unable to retrieve users.");
     }
   }
 
@@ -80,6 +77,13 @@ export class UserRepository {
     user: createHikerDTO;
   }): Promise<HikerDTO> {
     try {
+      // Validate required input fields before executing the insert.
+      const firebaseUid = requiredString(user.firebase_uid, "firebase_uid");
+      const name = requiredString(user.name, "name");
+      const surname = requiredString(user.surname, "surname");
+      const email = requiredString(user.email, "email");
+      const mobileNumber = requiredString(user.mobile_number, "mobile_number");
+
       const result = await pool.query<UserRow>(
         `INSERT INTO "user" (
                 firebase_uid,
@@ -103,11 +107,11 @@ export class UserRepository {
                 emergency_contact,
                 role`,
         [
-          user.firebase_uid,
-          user.name,
-          user.surname,
-          user.email,
-          user.mobile_number,
+          firebaseUid,
+          name,
+          surname,
+          email,
+          mobileNumber,
           user.notes ?? null,
           user.emergency_contact ?? null,
           UserRole.HIKER,
@@ -116,35 +120,25 @@ export class UserRepository {
 
       const row = result.rows[0];
       if (!row) {
-        throw new InternalServerError("Created hiker was not returned");
+        throw new InternalServerError(
+          "The database did not return the created hiker.",
+        );
       }
 
       const hiker = this.toUserDTO(row);
       if (hiker.role !== UserRole.HIKER) {
-        throw new InternalServerError("Created user is not a hiker");
+        throw new InternalServerError(
+          "The created user does not have the HIKER role.",
+        );
       }
 
       return hiker;
     } catch (error) {
-      // Preserve application errors raised while mapping the created profile.
-      if (error instanceof AppError) {
-        throw error;
-      }
-
-      // PostgreSQL enforces unique Firebase UIDs and email addresses atomically.
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error &&
-        error.code === "23505"
-      ) {
-        throw new ConflictError(
-          "A user with this Firebase UID or email address already exists.",
-        );
-      }
-
-      console.error("Error creating user:", error);
-      throw new InternalServerError("Unable to create the hiker account.");
+      return throwRepositoryError(
+        error,
+        "Unable to create the hiker account.",
+        "A user with this Firebase UID or email address already exists.",
+      );
     }
   }
 
@@ -154,31 +148,28 @@ export class UserRepository {
     firebase_uid: string;
   }): Promise<UserDTO> {
     try {
+      // Reject missing or blank UIDs before accessing PostgreSQL.
+      const firebaseUid = requiredString(firebase_uid, "firebase_uid");
       const result = await pool.query<UserRow>(
         `SELECT * FROM "user" WHERE firebase_uid = $1`,
-        [firebase_uid],
+        [firebaseUid],
       );
 
       if (result.rows.length === 0) {
         throw new NotFoundError(
-          "Not user found with the provided firebase_uid",
+          "No user was found with the provided Firebase UID.",
         );
       }
 
       if (result.rows.length > 1) {
         throw new InternalServerError(
-          "Multiple users found with the same firebase_uid",
+          "Multiple users share the same Firebase UID.",
         );
       }
 
       return this.toUserDTO(result.rows[0]);
     } catch (error) {
-      if (error instanceof NotFoundError) {
-        throw error;
-      }
-
-      console.error("Error retrieving user:", error);
-      throw new InternalServerError("Error retrieving user");
+      return throwRepositoryError(error, "Unable to retrieve the user.");
     }
   }
 }

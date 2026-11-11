@@ -4,9 +4,9 @@ import {
   InvalidRequestError,
   NotFoundError,
 } from "../errors/AppError";
-import { throwRepositoryError } from "./repositoryErrors";
-import { MealSlotDTO } from "../models/dto/MealSlotDTO";
 import { AvailableDiningTableDTO } from "../models/dto/AvailableTableSlotDTO";
+import { MealSlotDTO } from "../models/dto/MealSlotDTO";
+import { throwRepositoryError } from "./utils/repositoryErrors";
 
 export class SlotsRepository {
   /** List meal slots in creation order. */

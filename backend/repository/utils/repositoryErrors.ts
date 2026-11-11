@@ -3,7 +3,7 @@ import {
   ConflictError,
   InternalServerError,
   InvalidRequestError,
-} from "../errors/AppError";
+} from "../../errors/AppError";
 
 /** Preserve application errors and translate PostgreSQL errors consistently. */
 export function throwRepositoryError(
