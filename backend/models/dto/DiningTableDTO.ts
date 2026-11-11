@@ -3,5 +3,5 @@ export interface DiningTableDTO {
   table_number: number;
   capacity: number;
   occupancy: number;
-  is_active: number;
+  is_active: boolean;
 }
