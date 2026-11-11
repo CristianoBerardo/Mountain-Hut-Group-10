@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { pool } from "../connections/PostgreSQL/database";
-import { DiningTable } from "../models/DiningTable";
+import { DiningTableDTO } from "../models/dto/DiningTableDTO";
 
 // GET + filters ?active=true&available=true
 export async function getTables(req: Request, res: Response): Promise<void> {
@@ -89,7 +89,7 @@ export async function getTableByTableNumber(
 // ! Attention needed, does it make sense to have UUID ad a PK and table_number as a unique field?
 export async function createTable(req: Request, res: Response): Promise<void> {
   try {
-    const table: Omit<DiningTable, "id"> = {
+    const table: Omit<DiningTableDTO, "id"> = {
       ...req.body,
       table_number: req.body.table_number ?? req.body.tableNumber,
       capacity: req.body.capacity,
@@ -131,7 +131,7 @@ export async function updateTable(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
 
-    const table: Omit<DiningTable, "id"> = {
+    const table: Omit<DiningTableDTO, "id"> = {
       ...req.body,
       table_number: req.body.table_number ?? req.body.tableNumber,
       capacity: req.body.capacity,

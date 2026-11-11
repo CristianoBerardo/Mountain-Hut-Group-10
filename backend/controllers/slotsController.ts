@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { pool } from "../connections/PostgreSQL/database";
-import { MealSlot } from "../models/MealSlot";
+import { MealSlotDTO } from "../models/dto/MealSlotDTO";
 
 export async function getMealSlots(req: Request, res: Response): Promise<void> {
   try {
@@ -87,7 +87,7 @@ export async function createMealSlot(
   res: Response,
 ): Promise<void> {
   try {
-    const mealSlot: Omit<MealSlot, "id"> = {
+    const mealSlot: Omit<MealSlotDTO, "id"> = {
       ...req.body,
     };
 
