@@ -4,8 +4,12 @@ Ensure you have the following installed on your machine:
 
 - [Node.js](https://nodejs.org/) (v20.x or v22.x LTS recommended)
 - [npm](https://www.npmjs.com/) (v10.x or higher)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (**must be running**)
 - [Git](https://git-scm.com/)
+
+An internet connection is required to access Supabase and Firebase.
+Docker is only needed to run the containerized application.
+
+Run the following commands from the repository root.
 
 ---
 
@@ -21,34 +25,33 @@ cp .env.example .env
 
 > **FOR MAC USER**: Open the `.env` file and replace "\" with "/"
 
-#### Firebase backend configuration
+#### Supabase Database
 
-Save the JSON file `mountain-hut-group-10-firebase.json` into the directory: `./backend/secrets` (downloaded from out telegram group)
+The backend connects directly to PostgreSQL hosted on Supabase.
 
-#### Firebase frontend configuration
+Request the development database credentials from the team and update these variables in the root `.env` file:
 
-In the root directory:
-
-```bash
-cd ./frontend
-cp .env.example .env.local
-cd ..
+```dotenv
+DB_HOST=your-supabase-host
+DB_PORT=5432
+DB_NAME=postgres
+DB_USER=your-supabase-user
+DB_PASSWORD="your-database-password"
+JWT_SECRET="your-development-secret"
 ```
 
-The React frontend uses the Firebase JavaScript SDK to authenticate users.
+Use the exact host, port, database name, and username provided for the selected Supabase connection method.
 
-1. Open the Firebase Console (https://console.firebase.google.com/u/0/)
-2. Select your Firebase project (`mountain-hut-group-10`) from the list of projects
-3. Click on the **Settings** icon &rarr; **General**
-4. Scroll down to your registered **Web App** (the `</>` icon)
+The shared development database must already contain the application tables and the data needed for testing. Starting the application does not create tables or load seed data.
 
-Into the file you created `.env.local` replace the hardcoded configuration values with the onces from your Firebase Web App configuration:
+#### Firebase backend configuration
 
-```text
-VITE_FIREBASE_API_KEY=firebaseConfig.apiKey
-VITE_FIREBASE_AUTH_DOMAIN=firebaseConfig.authDomain
-VITE_FIREBASE_PROJECT_ID=firebaseConfig.projectId
-VITE_FIREBASE_APP_ID=firebaseConfig.appId
+Save the JSON file `mountain-hut-group-10-firebase.json` into the directory: `./backend/secrets` (downloaded from our telegram group)
+
+Configure its path in the root `.env`:
+
+```dotenv
+GOOGLE_APPLICATION_CREDENTIALS=./backend/secrets/mountain-hut-group-10-firebase.json
 ```
 
 ### 2. Install All Dependencies
@@ -59,7 +62,7 @@ Install root, backend, and frontend dependencies with a single command:
 npm run install:all
 ```
 
-### 3. Start the Development Server
+### 3. Start the Application
 
 Run frontend and backend concurrently with hot-reloading:
 
@@ -67,19 +70,35 @@ Run frontend and backend concurrently with hot-reloading:
 npm run dev
 ```
 
-Done!
-
-> **Note**: `npm run dev` automatically triggers `npm run docker:db:up`, ensuring PostgreSQL and Adminer are running before the backend server starts.
+Access the application at:
 
 - **Frontend (Vite dev server)**: [http://localhost:5173](http://localhost:5173)
 - **Backend API (Express / nodemon)**: [http://localhost:3000](http://localhost:3000)
-- **Database Adminer Web UI**: [http://localhost:8080](http://localhost:8080)
+- **API documentation**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+
+### 4. Verify the Setup
+
+1. Check the backend terminal for `Connected to PostgreSQL database`
+2. Open http://localhost:3000/api/health and verify that it returns
+   `{"status":"ok"}`
+3. Open the frontend and sign in with a test account provided by the team
+
+The health endpoint confirms that the backend responds; it does not check database connectivity.
+
+## Database Management
+
+Use the Supabase dashboard:
+
+- **Table Editor** to inspect application data.
+- **SQL Editor** to execute SQL queries and schema changes.
+
+The shared development database is used by everyone configured with the same connection details.
 
 ## Individual Component Scripts
 
 If you only want to work on a specific part of the system:
 
-### Start backend only (automatically boots PostgreSQL first)
+### Start backend only
 
 ```bash
 npm run dev:backend
@@ -96,52 +115,3 @@ npm run dev:frontend
 ```bash
 npm run format
 ```
-
-### Starts the PostgreSQL database and Adminer containers in background
-
-```bash
-npm run docker:db:up
-```
-
-### Stops and removes the local database containers
-
-```bash
-npm run docker:db:down
-```
-
-### Streams real-time database logs to your terminal
-
-```bash
-npm run docker:db:logs
-```
-
-### Reset the database
-
-```bash
-docker compose -f backend/connections/PostgreSQL/compose.yaml down -v
-npm run docker:db:up
-```
-
----
-
-## Accessing the Adminer Web UI
-
-Navigate to [http://localhost:8080](http://localhost:8080) in your browser:
-
-- **System**: `PostgreSQL`
-- **Server**: `db`
-- **Username**: `admin`
-- **Password**: `admin`
-- **Database**: `admin`
-
----
-
-## Test accounts
-
-Firebase users linked to a row in `backend/connections/PostgreSQL/seed/seed.sql` (same email, same Firebase UID). The role comes from the seed row.
-
-| Role     | Email     | Password  |
-| -------- | --------- | --------- |
-| EMPLOYEE | `e@e.com` | `e@e.com` |
-
-> The seed only runs when the database is created. If your database already existed, [reset it](#reset-the-database) to get these accounts.

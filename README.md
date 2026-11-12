@@ -41,17 +41,15 @@ Run frontend and backend concurrently with hot-reloading:
 npm run dev
 ```
 
-> **Note**: `npm run dev` automatically triggers `npm run docker:db:up`, ensuring PostgreSQL and Adminer are running before the backend server starts.
-
 - **Frontend (Vite dev server)**: [http://localhost:5173](http://localhost:5173)
 - **Backend API (Express / nodemon)**: [http://localhost:3000](http://localhost:3000)
-- **Database Adminer Web UI**: [http://localhost:8080](http://localhost:8080)
+- **API documentation**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
 
 ### 3. Individual Component Scripts
 
 If you only want to work on a specific part of the system:
 
-#### Start backend only (automatically boots PostgreSQL first)
+#### Start backend only
 
 ```bash
 npm run dev:backend
@@ -68,37 +66,6 @@ npm run dev:frontend
 ```bash
 npm run format
 ```
-
----
-
-### Database Management & Adminer
-
-The PostgreSQL development database lifecycle can be controlled with dedicated npm scripts:
-
-| Command                  | Action                                                              |
-| :----------------------- | :------------------------------------------------------------------ |
-| `npm run docker:db:up`   | Starts the PostgreSQL database and Adminer containers in background |
-| `npm run docker:db:down` | Stops and removes the local database containers                     |
-| `npm run docker:db:logs` | Streams real-time database logs to your terminal                    |
-
-#### Resetting the Database
-
-To clear all data and re-run the seed scripts (`seed/init.sql` and `seed/seed.sql`):
-
-```bash
-docker compose -f backend/connections/PostgreSQL/compose.yaml down -v
-npm run docker:db:up
-```
-
-#### Accessing the Adminer Web UI
-
-Navigate to [http://localhost:8080](http://localhost:8080) in your browser:
-
-- **System**: `PostgreSQL`
-- **Server**: `db`
-- **Username**: `admin`
-- **Password**: `admin`
-- **Database**: `admin`
 
 ---
 
@@ -175,7 +142,7 @@ I'll implement the CI/CD pipeline in GitHub Actions to automate the build and pu
 
 #### Running the Full Stack with Docker - like if you were in production
 
-To run the entire production-grade stack (Frontend on Nginx + Backend API + PostgreSQL) locally via Docker:
+To run the entire production-grade stack (Frontend on Nginx + Backend API) locally via Docker:
 
 ```bash
 ## Build and start all services in the background
@@ -199,19 +166,11 @@ Uses a **Multi-Stage Build** to keep the final image minimal and secure:
 - **Build Stage (`node:22-alpine AS build`)**: Installs all dependencies (including TypeScript and build tools), caches npm layer dependencies via `npm ci`, and compiles TypeScript into `/app/dist`.
 - **Runtime Stage (`node:22-alpine`)**: Discards all source `.ts` files, compilers, and devDependencies. Installs only production dependencies (`npm ci --omit=dev`), copies the precompiled `/app/dist`, sets up an unprivileged non-root user (`USER node`), and runs the compiled `node dist/app.js`.
 
-### 2. `backend/connections/PostgreSQL/compose.yaml` (Local Development Database)
-
-Dedicated to day-to-day coding on your local host:
-
-- Spins up only **PostgreSQL** (mapped to host port `5433` to prevent conflicts with local Postgres installations) and **Adminer** (lightweight web interface on port `8080`).
-- Automatically mounts `./seed/init.sql` and `./seed/seed.sql` into `/docker-entrypoint-initdb.d/` on first startup, creating tables and inserting sample seed data automatically.
-
-### 3. `compose.yaml` (Full-Stack Production/Staging Stack)
+### 2. `compose.yaml` (Full-Stack Production/Staging Stack)
 
 Orchestrates the complete distributed application:
 
-- **`db`**: PostgreSQL 17 on internal port 5432 with health checks (`pg_isready`).
-- **`backend`**: Node.js container with internal network discovery (`DB_HOST: db`) and safe startup conditions (`depends_on: db: condition: service_healthy`).
+- **`backend`**: Node.js container with internal network discovery.
 - **`frontend`**: React client built with Vite and served through an optimized Nginx alpine web server.
 
 ---
@@ -250,7 +209,7 @@ The backend uses the `firebase-admin` package to interact with Firebase Authenti
 The Firebase Admin SDK is initialized in:
 
 ```
-backend/src/config/firebaseAdmin.ts
+backend/config/firebaseAdmin.ts
 ```
 
 The `GOOGLE_APPLICATION_CREDENTIALS` environment variable specifies the location of the Firebase service account credential file.
@@ -328,42 +287,3 @@ Steps:
 6. Wait a few minutes for the change to take effect, then rerun the Firebase Admin test.
 
 **NOTE**: This API requirement is relevant to the custom-token generation test described above. It should not be interpreted as a requirement for every Firebase Admin operation.
-
-## 7. Firebase Frontend Configuration
-
-The React frontend uses the Firebase JavaScript SDK to authenticate users.
-
-### Environment Variables
-
-#### Where to find your Firebase Configuration
-
-1. Open the Firebase Console
-2. Select your Firebase project
-3. Click on the **Settings** icon &rarr; **General**
-4. Select your registered **Web App** (the `</>` icon)
-5. In the **SDK setup and configuration** section, select **Config** to display your Firebase configuration object
-
-Copy the Firebase configuration into:
-
-```path
-/frontend/src/config/firebase.ts
-```
-
-Before using it, replace the hardcoded configuration values with the corresponding Vite environment variables.
-
-Create a `.env.local` file in the `frontend/` directory and configure the following variables using the values from your Firebase Web App configuration:
-
-```text
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_APP_ID=your_firebase_app_id
-```
-
-Replace the example values with the actual configuration values for the Firebase Web App.
-
-### SECURITY CONSIDERATIONS
-
-- Variables prefixed with `VITE_` are exposed to client-side code
-- TNever store service account private keys or other server-side secrets in frontend environment variables
-- Keep `.env.local` out of Git if it contains local configuration, and never commit the Firebase Admin service account JSON file
