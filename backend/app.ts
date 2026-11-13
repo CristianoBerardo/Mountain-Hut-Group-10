@@ -10,6 +10,7 @@ import reservationRoutes from "./routes/reservationRoutes";
 import slotRoutes from "./routes/slotRoutes";
 import tableRoutes from "./routes/tableRoutes";
 import userRoutes from "./routes/userRoutes";
+import { errorHandler } from "./middleware/errorHandler";
 
 // Carica il file .env dalla root del progetto (Single Source of Truth)
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -24,6 +25,8 @@ app.use("/api/v1/tables", tableRoutes);
 
 app.use("/api/v1/slots", slotRoutes);
 app.use("/api/v1/reservations", reservationRoutes);
+
+app.use(errorHandler)
 
 app.use(
   "/api-docs",

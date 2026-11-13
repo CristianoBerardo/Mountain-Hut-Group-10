@@ -1,24 +1,44 @@
 import { Router } from "express";
-import {
-  createReservationV2,
-  deleteReservation,
-  getReservationById,
-  getReservations,
-  updateReservation,
-} from "../controllers/reservationController";
+import { ReservationController } from "../controllers/reservationController";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { authorizeRole } from "../middleware/authorizeRole";
 import { UserRole } from "../types/UserRole";
 
 const router = Router();
+const reservationController = new ReservationController();
 
-router.get("/", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), getReservations);
-router.get("/:id", authenticateToken, authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN), getReservationById);
+router.get(
+  "/",
+  authenticateToken,
+  authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN),
+  reservationController.getReservations.bind(reservationController),
+);
+router.get(
+  "/:id",
+  authenticateToken,
+  authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN),
+  reservationController.getReservationById.bind(reservationController),
+);
 
-router.post("/", authenticateToken, authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN), createReservationV2);
+router.post(
+  "/",
+  authenticateToken,
+  authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN),
+  reservationController.createReservationV2.bind(reservationController),
+);
 
-router.patch("/:id", authenticateToken, authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN), updateReservation);
+router.patch(
+  "/:id",
+  authenticateToken,
+  authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN),
+  reservationController.updateReservation.bind(reservationController),
+);
 
-router.delete("/:id", authenticateToken, authorizeRole(UserRole.HIKER,UserRole.EMPLOYEE, UserRole.WARDEN), deleteReservation);
+router.delete(
+  "/:id",
+  authenticateToken,
+  authorizeRole(UserRole.HIKER, UserRole.EMPLOYEE, UserRole.WARDEN),
+  reservationController.deleteReservation.bind(reservationController),
+);
 
 export default router;

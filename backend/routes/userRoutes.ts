@@ -1,21 +1,23 @@
 import { Router } from "express";
-import {
-  createUser,
-  deleteUser,
-  getUserByUsername,
-  getUsers,
-  updateUser,
-} from "../controllers/userController";
 import { authenticateToken } from "../middleware/authenticateToken";
 import { authorizeRole } from "../middleware/authorizeRole";
 import { UserRole } from "../types/UserRole";
+import { UserController } from "../controllers/userController";
 
 const router = Router();
 
-router.get("/", authenticateToken, authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN), getUsers);
-router.post("/", createUser);
-router.get("/:username", getUserByUsername);
-router.put("/:username", updateUser);
-router.delete("/:username", deleteUser);
+const userController = new UserController();
+
+router.get(
+  "/",
+  authenticateToken,
+  authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN),
+  userController.getUsers.bind(userController),
+);
+
+router.get(
+  "/:firebase_uid",
+  userController.getUserByFirebaseUid.bind(userController),
+);
 
 export default router;

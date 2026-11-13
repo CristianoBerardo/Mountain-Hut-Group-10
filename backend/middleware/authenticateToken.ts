@@ -1,42 +1,57 @@
-/**
- * This middleware must:
- *    1. Reat the JWT token from the request header
- *    2. Verify that the token is valid
- *    3. Extract the user if from the token
- *    4. Retrieve the user from the database using the extracted user id
- *    5. Saving the user object in the request object for further processing
- */
-
 import { NextFunction, Request, Response } from "express";
 import { adminAuth } from "../config/firebaseAdmin";
+import {
+  AppError,
+  InternalServerError,
+  TokenMissingOrInvalidError,
+} from "../errors/AppError";
 
+// Invalid credentials are client errors; Firebase service failures remain 500s.
+const invalidTokenCodes = new Set([
+  "auth/argument-error",
+  "auth/invalid-argument",
+  "auth/invalid-id-token",
+  "auth/id-token-expired",
+  "auth/id-token-revoked",
+  "auth/user-disabled",
+  "auth/user-not-found",
+]);
+
+/** Verify the Firebase ID token and expose its claims to subsequent handlers. */
 export async function authenticateToken(
-    req: Request,
-    res: Response,
-    next: NextFunction
+  req: Request,
+  res: Response,
+  next: NextFunction,
 ): Promise<void> {
-    try {
-        // Retrieve the Authorization header from the request
-        const authHeader = req.headers.authorization;
+  try {
+    const match = req.headers.authorization?.match(/^Bearer[ \t]+(\S+)$/i);
 
-        // Check if the token is provided using the Bearer scheme
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            res.status(401).json({ error: "Authorization header is missing or invalid" });
-            return;
-        }
-
-        // Extract the token from the Authorization header
-        const token = authHeader.split(" ")[1];
-
-        // Verify JWT signature and expiration
-        const decoded = await adminAuth.verifyIdToken(token);
-
-        res.locals.user = decoded;
-
-        // Continue to the next middleware or controller
-        next();
-    } catch (error) {
-        console.error("Error authenticating token:", error);
-        res.status(401).json({ error: "Invalid or expired token" });
+    if (!match) {
+      throw new TokenMissingOrInvalidError();
     }
+
+    res.locals.user = await adminAuth.verifyIdToken(match[1]);
+    next();
+  } catch (error) {
+    if (error instanceof AppError) {
+      next(error);
+      return;
+    }
+
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof error.code === "string" &&
+      invalidTokenCodes.has(error.code)
+    ) {
+      next(new TokenMissingOrInvalidError());
+      return;
+    }
+
+    console.error("Token verification failed:", error);
+    next(
+      new InternalServerError("Unable to verify the authentication token."),
+    );
+  }
 }
