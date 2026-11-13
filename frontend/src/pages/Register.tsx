@@ -18,6 +18,7 @@ import AuthTabs from "../components/AuthTabs";
 import Navbar from "../components/Navbar";
 import { auth } from "../config/firebase";
 import "../styles/AuthTabs.css";
+import "../styles/Register.css";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 
 function Register() {
@@ -133,7 +134,7 @@ function Register() {
   }
 
   return (
-    <>
+    <div className="register-page">
       <Navbar />
 
       <div className="register-container">
@@ -313,7 +314,7 @@ function Register() {
           </Link>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
