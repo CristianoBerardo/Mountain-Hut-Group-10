@@ -2,6 +2,21 @@
    MANAGE SLOTS PAGE (MH-02)
    ========================================== */
 
+.manage-slots-page {
+  --accent: #315440;
+  --accent-bg: #edf1e8;
+  --accent-border: #a9bea7;
+  --background: #fff;
+  --border: #e8e9df;
+  --text: #6b756d;
+  --text-h: #253c31;
+
+  flex: 1;
+  min-height: 100vh;
+  color: #23332c;
+  background: #f7f6f1;
+}
+
 .slots-page {
   width: 100%;
   max-width: 1100px;
@@ -12,8 +27,10 @@
 
 .slots-page-header h1 {
   font-size: 34px;
-  font-weight: 700;
+  font-weight: 400;
   margin: 8px 0 6px;
+  color: #253c31;
+  font-family: Georgia, "Times New Roman", serif;
 }
 
 .slots-page-header p {
@@ -795,4 +812,63 @@
     grid-template-columns: 1fr;
   }
 
+}
+
+.manage-slots-page .slots-panel {
+  border-radius: 8px;
+}
+
+.manage-slots-page .slots-info {
+  color: #315440;
+  background: #edf1e8;
+  border-color: #cbd6c7;
+}
+
+.manage-slots-page .slots-btn.primary:hover:not(:disabled) {
+  background: #254532;
+}
+
+.manage-slots-page .slots-btn.ghost:hover:not(:disabled) {
+  background: #edf1e8;
+}
+
+.manage-slots-page .slots-page input[type="date"],
+.manage-slots-page .slots-page input[type="time"],
+.manage-slots-page .slots-page input[type="number"],
+.manage-slots-page .slots-page select {
+  border-color: #d9e0d6;
+  border-radius: 5px;
+}
+
+.manage-slots-page .slots-page input:focus,
+.manage-slots-page .slots-page select:focus,
+.manage-slots-page .slots-dialog-fields input:focus {
+  outline-color: #718b69;
+  border-color: #718b69;
+}
+
+.manage-slots-page .slots-dialog {
+  color: #253c31;
+  border-radius: 8px;
+}
+
+.manage-slots-page .slots-dialog-header h2 {
+  color: #253c31;
+}
+
+.manage-slots-page .slots-dialog-fields input {
+  border-color: #d9e0d6;
+  border-radius: 5px;
+}
+
+.manage-slots-page .time-picker-field {
+  background: #edf1e8;
+}
+
+.manage-slots-page .time-picker-field:hover {
+  background: #e2eadd;
+}
+
+.manage-slots-page .time-picker-band {
+  background: #edf1e8;
 }

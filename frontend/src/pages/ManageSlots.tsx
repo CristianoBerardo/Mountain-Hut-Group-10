@@ -86,7 +86,7 @@ function ManageSlots() {
     const selectedId = view.kind === "details" ? view.slotId : null;
 
     return (
-        <>
+        <div className="manage-slots-page">
             <Navbar />
             <main className="slots-page">
                 <header className="slots-page-header">
@@ -152,7 +152,7 @@ function ManageSlots() {
                     </div>
                 )}
             </main>
-        </>
+        </div>
     );
 }
 

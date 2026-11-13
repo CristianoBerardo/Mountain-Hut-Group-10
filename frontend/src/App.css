@@ -209,8 +209,9 @@ p {
   font-size: 16px;
   font-weight: 500;
 
-  background: var(--background);
-  border-radius: 8px;
+  background: #f7f6f1;
+  border-bottom: 1px solid rgba(35, 51, 44, 0.1);
+  border-radius: 0;
 }
 
 .navbar-home-button,
@@ -226,8 +227,8 @@ p {
   font-size: 16px;
   font-weight: 600;
 
-  color: var(--accent);
-  background: var(--background);
+  color: #344a3d;
+  background: transparent;
 
   border: 2px solid transparent;
   border-radius: 8px;
@@ -236,19 +237,34 @@ p {
   cursor: pointer;
 
   transition:
+    color 0.3s,
     border-color 0.3s,
+    background-color 0.3s,
     transform 0.2s;
 }
 
-.navbar-home-button:hover,
+.navbar-auth-button {
+  color: #fff;
+  background: #315440;
+}
+
+.navbar-home-button:hover {
+  color: #253c31;
+  background: #e9eee4;
+  border-color: #cbd6c7;
+  transform: translateY(-2px);
+}
+
 .navbar-auth-button:hover {
-  border-color: var(--accent-border);
+  color: #fff;
+  background: #254532;
+  border-color: #254532;
   transform: translateY(-2px);
 }
 
 .navbar-home-button:focus-visible,
 .navbar-auth-button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 3px solid #718b69;
   outline-offset: 3px;
 }
 /* ==========================================
