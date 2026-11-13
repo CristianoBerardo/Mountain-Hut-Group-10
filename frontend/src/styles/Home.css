@@ -16,9 +16,32 @@
   border-radius: 0;
 }
 
-.landing-page .navbar-home-button,
-.landing-page .navbar-auth-button {
+.landing-page .navbar-home-button {
   color: #344a3d;
+  background: transparent;
+}
+
+.landing-page .navbar-home-button:hover {
+  color: #253c31;
+  background: #e9eee4;
+  border-color: #cbd6c7;
+}
+
+.landing-page .navbar-auth-button {
+  color: #fff;
+  background: #315440;
+}
+
+.landing-page .navbar-auth-button:hover {
+  color: #fff;
+  background: #254532;
+  border-color: #254532;
+}
+
+.landing-page .navbar-home-button:focus-visible,
+.landing-page .navbar-auth-button:focus-visible {
+  outline: 3px solid #718b69;
+  outline-offset: 3px;
 }
 
 .landing-hero {
