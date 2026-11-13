@@ -8,6 +8,7 @@ import "../App.css";
 import AuthTabs from "../components/AuthTabs";
 import Navbar from "../components/Navbar";
 import { auth } from "../config/firebase";
+import "../styles/Login.css";
 
 function Login() {
     const navigate = useNavigate();
@@ -124,7 +125,7 @@ function Login() {
     }
 
     return (
-        <>
+        <div className="login-page">
             <Navbar />
             <div className="login-container">
                 <div className="login-card">
@@ -201,7 +202,7 @@ function Login() {
 
                 </div>
             </div>
-        </>
+        </div>
     );
 }
 
