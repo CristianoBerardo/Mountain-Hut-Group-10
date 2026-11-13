@@ -15,6 +15,14 @@ Ensure you have the following installed on your machine:
 
 ---
 
+## Users
+
+| email                 | password              | role     |
+| --------------------- | --------------------- | -------- |
+| hiker@hiker.com       | hiker@hiker.com       | HIKER    |
+| employee@employee.com | employee@employee.com | EMPLOYEE |
+| warden@warden.com     | warden@warden.com     | WARDEN   |
+
 ## Local Development
 
 ### 0. Environment Configuration
