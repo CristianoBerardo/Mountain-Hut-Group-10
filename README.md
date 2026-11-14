@@ -57,7 +57,6 @@ services:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
-      JWT_SECRET: ${JWT_SECRET}
       GOOGLE_APPLICATION_CREDENTIALS: /app/backend/secrets/mountain-hut-group-10-firebase.json
     volumes:
       - ./mountain-hut-group-10-firebase.json:/app/backend/secrets/mountain-hut-group-10-firebase.json:ro
@@ -74,9 +73,6 @@ DB_PASSWORD=supabase_password
 DB_HOST=supabase_host
 DB_PORT=5432
 DB_NAME=postgres
-
-# Security
-JWT_SECRET=jwt-secret-key
 ```
 
 ### mountain-hut-group-10-firebase.json
