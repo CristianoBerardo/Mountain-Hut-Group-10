@@ -31,6 +31,15 @@ Ensure you have the following installed on your machine:
    - .env - contains the environment variables for the application
    - mountain-hut-group-10-firebase.json - contains the Firebase service account credentials
 
+### The structure of the repository should look like this:
+
+```
+mountain-hut-group-10/
+├── compose.yaml
+├── .env
+├── mountain-hut-group-10-firebase.json
+```
+
 ### Compose.yaml
 
 ```yaml
@@ -49,9 +58,9 @@ services:
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
-      GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/firebase.json
+      GOOGLE_APPLICATION_CREDENTIALS: /app/backend/secrets/mountain-hut-group-10-firebase.json
     volumes:
-      - ./mountain-hut-group-10-firebase.json:/app/secrets/firebase.json:ro
+      - ./mountain-hut-group-10-firebase.json:/app/backend/secrets/mountain-hut-group-10-firebase.json:ro
     restart: unless-stopped
 ```
 
