@@ -1,11 +1,39 @@
 name: ${PROJECT_NAME:-Mountain-Hut-prod}
 
 services:
-  backend:
-    image: ${DOCKER_USER:-mountainhut}/mountain-hut-backend:${TAG:-latest}
-    build: ./backend
+  # backend:
+  #   image: ${DOCKER_USER:-mountainhut}/mountain-hut-backend:${TAG:-latest}
+  #   build: ./backend
+  #   ports:
+  #     - "${BACKEND_PORT:-3000}:3000"
+  #   environment:
+  #     DB_USER: ${DB_USER}
+  #     DB_PASSWORD: ${DB_PASSWORD}
+  #     DB_HOST: ${DB_HOST}
+  #     DB_PORT: ${DB_PORT}
+  #     DB_NAME: ${DB_NAME}
+  #     JWT_SECRET: ${JWT_SECRET}
+  #     GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/firebase.json
+  #   volumes:
+  #     - ${GOOGLE_APPLICATION_CREDENTIALS}:/app/secrets/firebase.json:ro
+
+  # frontend:
+  #   image: ${DOCKER_USER:-mountainhut}/mountain-hut-frontend:${TAG:-latest}
+  #   build: ./frontend
+  #   ports:
+  #     - "${FRONTEND_PORT:-8080}:80"
+  #   depends_on:
+  #     - backend
+
+  mountain-hut:
+    image: ${DOCKER_USER:-mountainhut}/mountain-hut:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "${BACKEND_PORT:-3000}:3000"
+      # - "${APP_PORT:-3000}:3000"
+      # Se usi l'Opzione B (con Nginx), esponi invece:
+      - "${FRONTEND_PORT:-8080}:80"
     environment:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
@@ -13,14 +41,7 @@ services:
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
+
       GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/firebase.json
     volumes:
       - ${GOOGLE_APPLICATION_CREDENTIALS}:/app/secrets/firebase.json:ro
-
-  frontend:
-    image: ${DOCKER_USER:-mountainhut}/mountain-hut-frontend:${TAG:-latest}
-    build: ./frontend
-    ports:
-      - "${FRONTEND_PORT:-8080}:80"
-    depends_on:
-      - backend
