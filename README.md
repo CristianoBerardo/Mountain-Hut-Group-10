@@ -97,7 +97,26 @@ Once you have these files ready, you can run the application using Docker Compos
 docker compose up -d
 ```
 
+Verify that the application is running by checking the logs:
+
+```bash
+docker compose logs -f
+```
+
+Should see something like:
+
+```bash
+mountain-hut-1  | Backend server is running on port 3000...
+mountain-hut-1  | Connected to PostgreSQL database
+```
+
 Enjoy! The application should now be running and accessible at [http://localhost:3000](http://localhost:3000).
+
+### Delete the image and container
+
+```bash
+docker compose down
+```
 
 ---
 
