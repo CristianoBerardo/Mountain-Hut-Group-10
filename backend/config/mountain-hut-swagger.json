@@ -895,6 +895,41 @@
           }
         }
       }
+    },
+    "/api/v1/users/{firebase_uid}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get a user by Firebase UID",
+        "description": "Retrieve a single user using their Firebase Authentication UID (not the PostgreSQL UUID). The response contains the fields of the corresponding Hiker, Employee or Warden DTO. Enter an existing Firebase UID to try a successful request, or an unknown UID to test the 404 response. This route currently has no authentication middleware.",
+        "operationId": "getUserByFirebaseUid",
+        "security": [],
+        "parameters": [
+          {
+            "name": "firebase_uid",
+            "in": "path",
+            "required": true,
+            "description": "Firebase Authentication UID associated with the user. Replace the example with an existing UID from your database.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "example": "example-hiker-firebase-uid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User retrieved successfully"
+          },
+          "404": {
+            "description": "No user found for the provided Firebase UID"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
     }
   },
   "components": {

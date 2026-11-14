@@ -1,441 +1,104 @@
-import { Request, Response } from "express";
-import { pool } from "../connections/PostgreSQL/database";
-import { CreateReservationDTO } from "../models/dto/ReservationDTO";
-import { MealReservation } from "../models/MealReservation";
+import { NextFunction, Request, Response } from "express";
+import { ReservationRepository } from "../repository/ReservationRepository";
+import {
+  positiveInteger,
+  requestObject,
+  requiredString,
+} from "../utils/requestValidation";
 
-type TableRow = {
-  dining_table_id: string;
-  free: number;
-};
-type Assignment = {
-  dining_table_id: string;
-  seats_assigned: number;
-};
+export class ReservationController {
+  private readonly reservationRepository: ReservationRepository;
 
-// Given a list of tables with their free seats, returns the minimal set of
-// assignments that seats `partySize` people, keeping them together as much
-// as possible (smallest-sufficient single table first, then greedy fill).
-function assignTables(tables: TableRow[], partySize: number): Assignment[] {
-  const assignments: Assignment[] = [];
+  constructor() {
+    this.reservationRepository = new ReservationRepository();
+  }
 
-  // Try to seat the whole party at ONE table (smallest that fits)
-  const singleTable = tables
-    .filter((t) => Number(t.free) >= partySize)
-    .sort((a, b) => Number(a.free) - Number(b.free)) // smallest sufficient first
-    .at(0);
-
-  if (singleTable) {
-    assignments.push({
-      dining_table_id: singleTable.dining_table_id,
-      seats_assigned: partySize,
-    });
-  } else {
-    // Greedy fill: tables sorted by free DESC
-    let remaining = partySize;
-    for (const t of tables) {
-      if (remaining <= 0) break;
-      const take = Math.min(Number(t.free), remaining);
-      if (take > 0) {
-        assignments.push({
-          dining_table_id: t.dining_table_id,
-          seats_assigned: take,
-        });
-        remaining -= take;
-      }
+  /** Validate the HTTP request and delegate to the repository. */
+  async getReservations(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const result = await this.reservationRepository.getReservations();
+      res.status(200).json(result);
+    } catch (error) {
+      // Preserve typed errors for the shared HTTP error handler.
+      next(error);
     }
   }
 
-  return assignments;
-}
-
-function isTwoHoursAhead(slotDate: string, slotStartsAt: string): boolean {
-  // slotDate:    'YYYY-MM-DD'
-  // slotStartsAt: 'HH:MM:SS' (as returned by pg) or 'HH:MM'
-  const hhmm = slotStartsAt.slice(0, 5); // take only HH:MM
-  const slotStart = new Date(`${slotDate}T${hhmm}:00Z`);
-  const diffMs = slotStart.getTime() - Date.now();
-  return diffMs >= 2 * 60 * 60 * 1000;
-}
-
-export async function getReservations(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM meal_reservation ORDER BY starts_at ASC`,
-    );
-
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: "No reservations found" });
-      return;
+  /** Validate the HTTP request and delegate to the repository. */
+  async getReservationById(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const id = requiredString(req.params.id, "id");
+      const result = await this.reservationRepository.getReservationById(id);
+      res.status(200).json(result);
+    } catch (error) {
+      // Preserve typed errors for the shared HTTP error handler.
+      next(error);
     }
-
-    res.status(200).json(result.rows);
-  } catch (error) {
-    console.error("Error retrieving reservations:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-export async function getReservationById(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  const { id } = req.params;
-  try {
-    const result = await pool.query(
-      `SELECT
-         mr.*,
-         COALESCE(
-           json_agg(
-             json_build_object(
-               'dining_table_id', rt.dining_table_id,
-               'seats_assigned',  rt.seats_assigned
-             )
-           ) FILTER (WHERE rt.dining_table_id IS NOT NULL),
-           '[]'
-         ) AS tables
-       FROM meal_reservation mr
-       LEFT JOIN reservation_table rt ON rt.reservation_id = mr.id
-       WHERE mr.id = $1
-       GROUP BY mr.id`,
-      [id],
-    );
-
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: "Reservation not found" });
-      return;
-    }
-
-    res.status(200).json(result.rows[0]);
-  } catch (error) {
-    console.error("Error retrieving reservation:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-}
-
-export async function createReservationV2(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  const {
-    slot_id,
-    party_size,
-    hiker_id,
-  }: CreateReservationDTO & { hiker_id: string } = req.body;
-
-  if (!hiker_id) {
-    res.status(400).json({ error: "hiker_id is required" });
-    return;
-  }
-  if (!slot_id) {
-    res.status(400).json({ error: "slot_id is required" });
-    return;
-  }
-  if (!party_size || party_size <= 0) {
-    res.status(400).json({ error: "party_size must be a positive integer" });
-    return;
   }
 
-  const client = await pool.connect();
-  try {
-    // Fetch slot
-    const slotResult = await client.query(
-      `SELECT id, date::text AS date, starts_at::text AS starts_at, ends_at::text AS ends_at
-       FROM meal_slot WHERE id = $1`,
-      [slot_id],
-    );
-    if (slotResult.rows.length === 0) {
-      res.status(404).json({ error: "Slot not found" });
-      return;
+  /** Validate the HTTP request and delegate to the repository. */
+  async createReservationV2(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const body = requestObject(req.body);
+      const input = {
+        hiker_id: requiredString(body.hiker_id, "hiker_id"),
+        slot_id: requiredString(body.slot_id, "slot_id"),
+        party_size: positiveInteger(body.party_size, "party_size"),
+      };
+      const result = await this.reservationRepository.createReservation(input);
+      res.status(201).json(result);
+    } catch (error) {
+      // Preserve typed errors for the shared HTTP error handler.
+      next(error);
     }
-    const slot = slotResult.rows[0];
+  }
 
-    //  2-hour rule
-    if (!isTwoHoursAhead(slot.date, slot.starts_at)) {
-      res.status(400).json({
-        error: "Reservations must be made at least 2 hours in advance",
-      });
-      return;
-    }
-
-    // 1-per-slot rule — hiker cannot double-book
-    const dupCheck = await client.query(
-      `SELECT id FROM meal_reservation
-       WHERE hiker_id = $1 AND slot_id = $2 AND status = 'CONFIRMED'`,
-      [hiker_id, slot_id],
-    );
-    if (dupCheck.rows.length > 0) {
-      res.status(400).json({
-        error: "You already have a confirmed reservation for this slot",
-      });
-      return;
-    }
-
-    // begin transaction
-    await client.query("BEGIN");
-
-    // lock slot_table rows + compute free seats per table to prevent Race cond.
-    await client.query(
-      `SELECT dining_table_id FROM slot_table WHERE slot_id = $1 FOR UPDATE`,
-      [slot_id],
-    );
-
-    // Uses dt.capacity (seats_in_slot was removed from slot_table schema)
-    const tableResult = await client.query<{
-      dining_table_id: string;
-      capacity: number;
-      booked: number;
-      free: number;
-    }>(
-      `SELECT
-         st.dining_table_id,
-         dt.capacity,
-         COALESCE(SUM(rt.seats_assigned), 0)              AS booked,
-         dt.capacity - COALESCE(SUM(rt.seats_assigned), 0) AS free
-       FROM slot_table st
-       JOIN dining_table dt ON dt.id = st.dining_table_id
-       LEFT JOIN reservation_table rt
-              ON rt.dining_table_id = st.dining_table_id
-             AND rt.reservation_id IN (
-                 SELECT id FROM meal_reservation
-                 WHERE slot_id = $1 AND status = 'CONFIRMED'
-             )
-       WHERE st.slot_id = $1
-         AND dt.is_active = TRUE
-       GROUP BY st.dining_table_id, dt.capacity
-       ORDER BY free DESC`,
-      [slot_id],
-    );
-
-    const tables = tableResult.rows;
-    const totalFree = tables.reduce((sum, t) => sum + Number(t.free), 0);
-
-    if (totalFree < party_size) {
-      await client.query("ROLLBACK");
-      res
-        .status(400)
-        .json({ error: "Not enough seats available for this slot" });
-      return;
-    }
-
-    const assignments = assignTables(tables, party_size);
-
-    // INSERT meal_reservation
-    const hhmm_start = slot.starts_at.slice(0, 5);
-    const hhmm_end = slot.ends_at.slice(0, 5);
-    const reservationResult = await client.query<MealReservation>(
-      `INSERT INTO meal_reservation
-         (hiker_id, slot_id, party_size, starts_at, ends_at, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, 'CONFIRMED', NOW())
-       RETURNING *`,
-      [
-        hiker_id,
-        slot_id,
-        party_size,
-        `${slot.date}T${hhmm_start}:00Z`,
-        `${slot.date}T${hhmm_end}:00Z`,
-      ],
-    );
-    const reservation = reservationResult.rows[0];
-
-    // INSERT reservation_table rows
-    for (const a of assignments) {
-      await client.query(
-        `INSERT INTO reservation_table (reservation_id, dining_table_id, seats_assigned)
-         VALUES ($1, $2, $3)`,
-        [reservation.id, a.dining_table_id, a.seats_assigned],
+  /** Validate the HTTP request and delegate to the repository. */
+  async updateReservation(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const id = requiredString(req.params.id, "id");
+      const body = requestObject(req.body);
+      const partySize = positiveInteger(body.party_size, "party_size");
+      const result = await this.reservationRepository.updateReservation(
+        id,
+        partySize,
       );
+      res.status(200).json(result);
+    } catch (error) {
+      // Preserve typed errors for the shared HTTP error handler.
+      next(error);
     }
-
-    await client.query("COMMIT");
-
-    res.status(201).json({ reservation, tables: assignments });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error creating reservation:", error);
-    res.status(500).json({ error: "Internal server error" });
-  } finally {
-    client.release();
-  }
-}
-
-export async function updateReservation(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  const { id } = req.params;
-  const { party_size }: { party_size: number } = req.body;
-
-  if (!party_size || party_size <= 0) {
-    res.status(400).json({ error: "party_size must be a positive integer" });
-    return;
   }
 
-  const client = await pool.connect();
-  try {
-    // Fetch existing reservation + slot info
-    const resResult = await client.query(
-      `SELECT mr.*,
-              ms.date::text       AS slot_date,
-              ms.starts_at::text  AS slot_starts_at,
-              ms.ends_at::text    AS slot_ends_at
-       FROM meal_reservation mr
-       JOIN meal_slot ms ON ms.id = mr.slot_id
-       WHERE mr.id = $1 AND mr.status = 'CONFIRMED'`,
-      [id],
-    );
-    if (resResult.rows.length === 0) {
-      res
-        .status(404)
-        .json({ error: "Reservation not found or not modifiable" });
-      return;
+  /** Validate the HTTP request and delegate to the repository. */
+  async deleteReservation(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const id = requiredString(req.params.id, "id");
+      const result = await this.reservationRepository.deleteReservation(id);
+      res.status(200).json(result);
+    } catch (error) {
+      // Preserve typed errors for the shared HTTP error handler.
+      next(error);
     }
-    const existing = resResult.rows[0];
-
-    // 2-hour rule
-    if (!isTwoHoursAhead(existing.slot_date, existing.slot_starts_at)) {
-      res.status(400).json({
-        error: "Cannot modify reservation less than 2 hours before the slot",
-      });
-      return;
-    }
-
-    await client.query("BEGIN");
-
-    // Lock slot_table rows first to prevent race conditions
-    await client.query(
-      `SELECT dining_table_id FROM slot_table WHERE slot_id = $1 FOR UPDATE`,
-      [existing.slot_id],
-    );
-
-    const tableResult = await client.query<{
-      dining_table_id: string;
-      capacity: number;
-      booked: number;
-      free: number;
-    }>(
-      `SELECT
-         st.dining_table_id,
-         dt.capacity,
-         COALESCE(SUM(rt.seats_assigned), 0)              AS booked,
-         dt.capacity - COALESCE(SUM(rt.seats_assigned), 0) AS free
-       FROM slot_table st
-       JOIN dining_table dt ON dt.id = st.dining_table_id
-       LEFT JOIN reservation_table rt
-              ON rt.dining_table_id = st.dining_table_id
-             AND rt.reservation_id IN (
-                 SELECT id FROM meal_reservation
-                 WHERE slot_id = $1
-                   AND status = 'CONFIRMED'
-                   AND id != $2
-             )
-       WHERE st.slot_id = $1
-         AND dt.is_active = TRUE
-       GROUP BY st.dining_table_id, dt.capacity
-       ORDER BY free DESC`,
-      [existing.slot_id, id],
-    );
-
-    const tables = tableResult.rows;
-    const totalFree = tables.reduce((sum, t) => sum + Number(t.free), 0);
-
-    if (totalFree < party_size) {
-      await client.query("ROLLBACK");
-      res.status(400).json({
-        error: "Not enough seats available for the new party size",
-      });
-      return;
-    }
-
-    // Re-run table assignment
-    const assignments = assignTables(tables, party_size);
-
-    // Replace reservation_table rows
-    await client.query(
-      `DELETE FROM reservation_table WHERE reservation_id = $1`,
-      [id],
-    );
-    for (const a of assignments) {
-      await client.query(
-        `INSERT INTO reservation_table (reservation_id, dining_table_id, seats_assigned)
-         VALUES ($1, $2, $3)`,
-        [id, a.dining_table_id, a.seats_assigned],
-      );
-    }
-
-    // Update party_size on the reservation
-    const updated = await client.query<MealReservation>(
-      `UPDATE meal_reservation SET party_size = $1 WHERE id = $2 RETURNING *`,
-      [party_size, id],
-    );
-
-    await client.query("COMMIT");
-    res.status(200).json({ reservation: updated.rows[0], tables: assignments });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error updating reservation:", error);
-    res.status(500).json({ error: "Internal server error" });
-  } finally {
-    client.release();
-  }
-}
-
-export async function deleteReservation(
-  req: Request,
-  res: Response,
-): Promise<void> {
-  const { id } = req.params;
-
-  const client = await pool.connect();
-  try {
-    // Fetch reservation + slot to check 2-hour rule
-    const resResult = await client.query(
-      `SELECT mr.*,
-              ms.date::text       AS slot_date,
-              ms.starts_at::text  AS slot_starts_at
-       FROM meal_reservation mr
-       JOIN meal_slot ms ON ms.id = mr.slot_id
-       WHERE mr.id = $1 AND mr.status = 'CONFIRMED'`,
-      [id],
-    );
-    if (resResult.rows.length === 0) {
-      res.status(404).json({
-        error: "Reservation not found or already cancelled",
-      });
-      return;
-    }
-    const reservation = resResult.rows[0];
-
-    // 2-hour rule
-    if (!isTwoHoursAhead(reservation.slot_date, reservation.slot_starts_at)) {
-      res.status(400).json({
-        error: "Cannot cancel reservation less than 2 hours before the slot",
-      });
-      return;
-    }
-
-    await client.query("BEGIN");
-
-    await client.query(
-      `UPDATE meal_reservation SET status = 'CANCELLED' WHERE id = $1`,
-      [id],
-    );
-
-    // Free the assigned table seats
-    await client.query(
-      `DELETE FROM reservation_table WHERE reservation_id = $1`,
-      [id],
-    );
-
-    await client.query("COMMIT");
-    res.status(200).json({ message: "Reservation cancelled successfully" });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error cancelling reservation:", error);
-    res.status(500).json({ error: "Internal server error" });
-  } finally {
-    client.release();
   }
 }

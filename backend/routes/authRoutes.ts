@@ -1,10 +1,20 @@
 import { Router } from "express";
-import { loginUser, registerUser } from "../controllers/authController";
+import { AuthController } from "../controllers/authController";
 import { authenticateToken } from "../middleware/authenticateToken";
 
 const router = Router();
+const authController = new AuthController();
 
-router.post("/login", authenticateToken, loginUser);
-router.post("/register", authenticateToken, registerUser);
+// Bind class handlers so Express preserves the controller instance.
+router.post(
+  "/login",
+  authenticateToken,
+  authController.loginUser.bind(authController),
+);
+router.post(
+  "/register",
+  authenticateToken,
+  authController.registerUser.bind(authController),
+);
 
 export default router;
