@@ -1,21 +1,28 @@
-FROM node:24-alpine AS frontend-build
+FROM node:24-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
 RUN npm run build-only
 
-FROM node:24-alpine AS backend-build
-RUN apk add --no-cache nginx
-
+FROM node:24-alpine AS backend-builder
 WORKDIR /app/backend
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci
 COPY backend/ ./
+RUN npm run build
 
-COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
-COPY frontend/nginx.conf /etc/nginx/http.d/default.conf
+FROM node:24-alpine
+WORKDIR /app/backend
 
-EXPOSE 80
+ENV NODE_ENV=production
 
-CMD ["sh", "-c", "node /app/backend/index.js & nginx -g 'daemon off;'"]
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY --from=backend-builder /app/backend/dist ./dist
+COPY --from=frontend-builder /app/frontend/dist ./public
+
+EXPOSE 3000
+
+CMD ["node", "dist/app.js"]

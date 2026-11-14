@@ -1,9 +1,10 @@
-name: Build and Push Docker Images
+name: Build and Push Docker Image
 
 on:
   push:
     branches:
       - main
+      - Docker-release
     tags:
       - "v*.*.*"
       - "*.*.*"
@@ -19,7 +20,7 @@ on:
 
 jobs:
   build-and-push:
-    name: Build & Push Images
+    name: Build & Push Image
     runs-on: ubuntu-latest
 
     steps:
@@ -58,7 +59,7 @@ jobs:
               // 3. Search for the latest tag on Docker Hub and increment the patch version
               if (dockerUser) {
                 try {
-                  const url = \`https://hub.docker.com/v2/repositories/\${dockerUser}/mountain-hut-backend/tags?page_size=100\`;
+                  const url = \`https://hub.docker.com/v2/repositories/\${dockerUser}/mountain-hut/tags?page_size=100\`;
                   const res = await fetch(url);
                   if (res.ok) {
                     const data = await res.json();
@@ -78,7 +79,7 @@ jobs:
                       semverTags.sort((a, b) => a.major - b.major || a.minor - b.minor || a.patch - b.patch);
                       const latest = semverTags[semverTags.length - 1];
                       const nextVersion = \`\${latest.major}.\${latest.minor}.\${latest.patch + 1}\`;
-                      console.log(\`Find latest Docker Hub tag: \${latest.major}.\${latest.minor}.\${latest.patch}. Incrementing to: \${nextVersion}\`);
+                      console.log(\`Found latest Docker Hub tag: \${latest.major}.\${latest.minor}.\${latest.patch}. Incrementing to: \${nextVersion}\`);
                       return nextVersion;
                     }
                   }
@@ -110,36 +111,22 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # 4. Configure optional secret files (if necessary at build-time)
-      # For example, if you have saved the .env file or the json in the secrets:
+      # 4. Configure secret files (needed if Vite reads VITE_* vars from .env at build-time)
       - name: Setup Secrets
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
           mkdir -p backend/secrets
           echo "${{ secrets.FIREBASE_SECRET }}" > backend/secrets/mountain-hut-group-10-firebase.json
 
-      # 5. Build & Push image Backend
-      - name: Build and push Backend image
+      # 5. Build & Push unified image
+      - name: Build and push Mountain Hut image
         uses: docker/build-push-action@v6
         with:
-          context: ./backend
-          file: ./backend/Dockerfile
+          context: .
+          file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/mountain-hut-backend:${{ steps.get_version.outputs.version }}
-            ${{ secrets.DOCKER_USERNAME }}/mountain-hut-backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # 6. Build & Push image Frontend
-      - name: Build and push Frontend image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/mountain-hut-frontend:${{ steps.get_version.outputs.version }}
-            ${{ secrets.DOCKER_USERNAME }}/mountain-hut-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/mountain-hut:${{ steps.get_version.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/mountain-hut:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

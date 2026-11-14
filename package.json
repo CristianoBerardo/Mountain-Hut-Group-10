@@ -13,13 +13,7 @@
     "build:frontend": "cd frontend && npm run build-only",
     "build:backend": "cd backend && npm run build",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-    "format": "prettier --write ./**/*ts",
-    "docker:db:up": "docker compose -f backend/connections/PostgreSQL/compose.yaml up -d",
-    "docker:db:down": "docker compose -f backend/connections/PostgreSQL/compose.yaml down",
-    "docker:db:logs": "docker compose -f backend/connections/PostgreSQL/compose.yaml logs -f",
-    "docker:build": "node scripts/docker-publish.js --build-only",
-    "docker:push": "node scripts/docker-publish.js",
-    "docker:deploy": "node scripts/docker-publish.js"
+    "format": "prettier --write ./**/*ts"
   },
   "devDependencies": {
     "@types/chai": "^5.2.2",
