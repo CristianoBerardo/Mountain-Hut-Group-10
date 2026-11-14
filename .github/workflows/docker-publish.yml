@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - Docker-release
     tags:
       - "v*.*.*"
       - "*.*.*"
