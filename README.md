@@ -57,7 +57,6 @@ services:
       DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
-      GOOGLE_APPLICATION_CREDENTIALS: /app/backend/secrets/mountain-hut-group-10-firebase.json
     volumes:
       - ./mountain-hut-group-10-firebase.json:/app/backend/secrets/mountain-hut-group-10-firebase.json:ro
     restart: unless-stopped
