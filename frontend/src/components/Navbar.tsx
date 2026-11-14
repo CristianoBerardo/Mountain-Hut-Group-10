@@ -11,7 +11,7 @@ function Navbar() {
     const role = sessionStorage.getItem("role")
 
     const isLoggedIn = !!token;
-    const isLoginPage = location.pathname === "/login";
+    const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
 
     function handleLogout() {
         // Remove authentication information
@@ -44,7 +44,7 @@ function Navbar() {
                 <MdLogout size={20} />
                 Logout ({username} - {role})
             </button>
-        ) : !isLoginPage ? (
+        ) : !isAuthPage ? (
             <Link to="/login" className="navbar-auth-button">
                 <MdLogin size={20} />
                 Login
