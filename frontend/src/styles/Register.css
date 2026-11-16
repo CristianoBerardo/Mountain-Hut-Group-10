@@ -1,0 +1,175 @@
+.register-page {
+  flex: 1;
+  min-height: 100vh;
+  color: #23332c;
+  background: #f7f6f1;
+}
+
+.register-page .navbar {
+  position: relative;
+  z-index: 1;
+  min-height: 68px;
+  padding: 10px clamp(20px, 6vw, 88px);
+  background: #f7f6f1;
+  border: 0;
+  border-bottom: 1px solid rgba(35, 51, 44, 0.1);
+  border-radius: 0;
+}
+
+.register-page .navbar-home-button {
+  color: #344a3d;
+  background: transparent;
+}
+
+.register-page .navbar-home-button:hover {
+  color: #253c31;
+  background: #e9eee4;
+  border-color: #cbd6c7;
+}
+
+.register-page .navbar-auth-button {
+  color: #fff;
+  background: #315440;
+}
+
+.register-page .navbar-auth-button:hover {
+  color: #fff;
+  background: #254532;
+  border-color: #254532;
+}
+
+.register-page .navbar-home-button:focus-visible,
+.register-page .navbar-auth-button:focus-visible {
+  outline: 3px solid #718b69;
+  outline-offset: 3px;
+}
+
+.register-page .register-container {
+  min-height: calc(100vh - 68px);
+  padding: 40px 20px;
+  background: #f7f6f1;
+}
+
+.register-page .register-card {
+  max-width: 500px;
+  padding: 34px;
+  background: #fff;
+  border: 1px solid #e8e9df;
+  border-radius: 8px;
+  box-shadow: 0 16px 42px rgba(35, 51, 44, 0.09);
+}
+
+.register-page .auth-tabs {
+  background: #edf1e8;
+}
+
+.register-page .auth-tab {
+  color: #496154;
+}
+
+.register-page .auth-tab.active {
+  color: #fff;
+  background: #315440;
+}
+
+.register-page .register-card h1 {
+  color: #253c31;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 34px;
+  font-weight: 400;
+}
+
+.register-page .register-card > p:not(.register-login-link) {
+  color: #6b756d;
+}
+
+.register-page .input-icon-container {
+  color: #718b69;
+  border-color: #d9e0d6;
+  border-radius: 5px;
+}
+
+.register-page .input-icon-container:focus-within {
+  border-color: #718b69;
+  box-shadow: 0 0 0 3px rgba(113, 139, 105, 0.14);
+}
+
+.register-page .input-icon-container input,
+.register-page .input-icon-container textarea {
+  color: #23332c;
+}
+
+.register-page .input-icon-container input::placeholder,
+.register-page .input-icon-container textarea::placeholder {
+  color: #879188;
+}
+
+.register-page .password-toggle {
+  color: #64746a;
+}
+
+.register-page .password-toggle:hover {
+  color: #315440;
+}
+
+.register-page .register-button {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 16px;
+  color: #fff;
+  background: #315440;
+  border: 1px solid #315440;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 16px;
+}
+
+.register-page .register-button:hover:not(:disabled) {
+  color: #fff;
+  background: #254532;
+  border-color: #254532;
+  transform: translateY(-1px);
+}
+
+.register-page .register-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.register-page .register-button:focus-visible,
+.register-page .auth-tab:focus-visible,
+.register-page .password-toggle:focus-visible,
+.register-page .back-link:focus-visible {
+  outline: 3px solid #718b69;
+  outline-offset: 3px;
+}
+
+.register-page .register-login-link {
+  color: #6b756d;
+}
+
+.register-page .register-login-link a,
+.register-page .back-link {
+  color: #315440;
+}
+
+.register-page .register-login-link a:hover,
+.register-page .back-link:hover {
+  color: #254532;
+}
+
+@media (max-width: 420px) {
+  .register-page .navbar {
+    padding: 10px 12px;
+  }
+
+  .register-page .navbar-home-button,
+  .register-page .navbar-auth-button {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .register-page .register-card {
+    padding: 26px 20px;
+  }
+}

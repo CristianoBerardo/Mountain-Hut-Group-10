@@ -7,6 +7,7 @@ import BookingCalendar from "../components/BookingCalendar";
 import Navbar from "../components/Navbar";
 import type { AssignedTableDTO } from "../dto/ReservationDTO";
 import type { AvailableSlotDTO } from "../dto/SlotDTO";
+import "../styles/BookTable.css";
 import {
     BOOKING_NOTICE_HOURS,
     formatDay,
@@ -169,7 +170,7 @@ function BookTable() {
     }
 
     return (
-        <>
+        <div className="book-table-page">
             <Navbar />
             <main className="client-booking">
                 {booking ? (
@@ -289,7 +290,7 @@ function BookTable() {
                     </form>
                 )}
             </main>
-        </>
+        </div>
     );
 }
 
