@@ -3,6 +3,7 @@ import { pool } from "../connections/PostgreSQL/database";
 import { InvalidRequestError, NotFoundError } from "../errors/AppError";
 import { CreateReservationDTO } from "../models/dto/ReservationDTO";
 import { MealReservation } from "../models/MealReservation";
+import { sendReservationConfirmation } from "../services/emailService";
 import { throwRepositoryError } from "./utils/repositoryErrors";
 
 type TableRow = {
@@ -135,6 +136,17 @@ export class ReservationRepository {
         throw new NotFoundError("Slot not found");
       }
       const slot = slotResult.rows[0];
+
+      // retrieve hiker data for email
+      const userResult = await client.query(
+        `SELECT name, surname, email FROM "user" WHERE id = $1`,
+        [hiker_id]
+      );
+      if (userResult.rows.length === 0) {
+        throw new NotFoundError("Hiker not found");
+      }
+      const hiker = userResult.rows[0];
+
       //  2-hour rule
       if (!isTwoHoursAhead(slot.date, slot.starts_at)) {
         throw new InvalidRequestError(
@@ -162,12 +174,14 @@ export class ReservationRepository {
       // Uses dt.capacity (seats_in_slot was removed from slot_table schema)
       const tableResult = await client.query<{
         dining_table_id: string;
+        table_number: number;
         capacity: number;
         booked: number;
         free: number;
       }>(
         `SELECT
          st.dining_table_id,
+         dt.table_number,
          dt.capacity,
          COALESCE(SUM(rt.seats_assigned), 0)              AS booked,
          dt.capacity - COALESCE(SUM(rt.seats_assigned), 0) AS free
@@ -181,7 +195,7 @@ export class ReservationRepository {
              )
        WHERE st.slot_id = $1
          AND dt.is_active = TRUE
-       GROUP BY st.dining_table_id, dt.capacity
+       GROUP BY st.dining_table_id, dt.table_number, dt.capacity
        ORDER BY free DESC`,
         [slot_id],
       );
@@ -220,6 +234,31 @@ export class ReservationRepository {
       }
       await client.query("COMMIT");
       transactionStarted = false;
+
+      // send confirmation email
+      try {
+        const tablesForEmail = assignments.map(a => {
+          const matched = tables.find(t => t.dining_table_id === a.dining_table_id);
+          return {
+            tableNumber: matched ? Number(matched.table_number) : 0,
+            seatsAssigned: a.seats_assigned,
+          };
+        });
+        await sendReservationConfirmation(hiker.email, {
+          hikerName: hiker.name,
+          hikerSurname: hiker.surname,
+          reservationId: reservation.id,
+          date: slot.date,
+          startsAt: slot.starts_at.slice(0, 5),
+          endsAt: slot.ends_at.slice(0, 5),
+          partySize: party_size,
+          tables: tablesForEmail,
+        });
+      } catch (emailError) {
+
+        console.error("Reservation created, but failed to send email:", emailError);
+      }
+
       return { reservation, tables: assignments };
     } catch (error) {
       if (client && transactionStarted) {
