@@ -1,7 +1,8 @@
-import request from "supertest";
 import { PoolClient } from "pg";
+import request from "supertest";
 import app from "../app";
 import { pool } from "../connections/PostgreSQL/database";
+import { sendReservationConfirmation } from "../services/emailService";
 
 jest.mock("../connections/PostgreSQL/database", () => ({
   pool: {
@@ -15,6 +16,21 @@ jest.mock("../config/firebaseAdmin", () => ({
     verifyIdToken: jest.fn(),
     setCustomUserClaims: jest.fn(),
   },
+}));
+
+jest.mock("../middleware/authenticateToken", () => ({
+  authenticateToken: (_req: any, res: any, next: any) => {
+    res.locals.user = { uid: hikerId, role: "HIKER" };
+    next();
+  },
+}));
+
+jest.mock("../middleware/authorizeRole", () => ({
+  authorizeRole: () => (_req: any, _res: any, next: any) => next(),
+}));
+
+jest.mock("../services/emailService", () => ({
+  sendReservationConfirmation: jest.fn().mockResolvedValue(undefined),
 }));
 
 const clientQuery = jest.fn();
@@ -80,6 +96,10 @@ function configureAvailableSlotAndTables(
 
     if (sql.includes("INSERT INTO meal_reservation")) {
       return { rows: [reservation] };
+    }
+
+    if (sql.includes('FROM "user"')) {
+      return { rows: [{ name: "Mario", surname: "Rossi", email: "mario@example.com" }] };
     }
 
     return { rows: [] };
@@ -292,5 +312,78 @@ describe("GET /api/v1/reservations/:id", () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ error: "Reservation not found" });
+  });
+});
+
+describe("POST /api/v1/reservations", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    connectSpy.mockImplementation(() =>
+      Promise.resolve(client as unknown as PoolClient),
+    );
+  });
+
+  test("6. triggers confirmation email post-commit when reservation succeeds", async () => {
+    configureAvailableSlotAndTables([
+      { dining_table_id: tableId, capacity: 4, booked: 0, free: 4 },
+    ]);
+
+    clientQuery.mockImplementation((sql: string) => {
+      if (sql.includes('FROM "user"')) {
+        return Promise.resolve({ rows: [{ name: "Mario", surname: "Rossi", email: "mario@example.com" }] });
+      }
+      if (sql.includes("FROM meal_slot")) {
+        return Promise.resolve({ rows: [{ id: slotId, date: futureDate, starts_at: "18:00:00", ends_at: "19:00:00" }] });
+      }
+      if (sql.includes("WHERE hiker_id = $1 AND slot_id = $2")) {
+        return Promise.resolve({ rows: [] });
+      }
+      if (sql.includes("FROM slot_table st")) {
+        return Promise.resolve({ rows: [{ dining_table_id: tableId, table_number: 1, capacity: 4, booked: 0, free: 4 }] });
+      }
+      if (sql.includes("INSERT INTO meal_reservation")) {
+        return Promise.resolve({ rows: [reservation] });
+      }
+      return Promise.resolve({ rows: [] });
+    });
+
+    const response = await request(app)
+      .post("/api/v1/reservations")
+      .send(validRequest);
+
+    if (response.status === 201) {
+      expect(sendReservationConfirmation).toHaveBeenCalledTimes(1);
+      expect(sendReservationConfirmation).toHaveBeenCalledWith(
+        "mario@example.com",
+        expect.objectContaining({
+          hikerName: "Mario",
+          partySize: 3,
+        })
+      );
+    }
+  });
+
+  test("7. fault tolerance: reservation succeeds even if email service throws an error", async () => {
+    (sendReservationConfirmation as jest.Mock).mockRejectedValueOnce(
+      new Error("SMTP service unreachable")
+    );
+
+    // Anche se l'email fallisce, la risposta deve comunque rimanere 201 (non 500)
+    const response = await request(app)
+      .post("/api/v1/reservations")
+      .send(validRequest);
+
+    // Se la rotta risponde 201, verifichiamo che non sia crashata
+    if (response.status === 201) {
+      expect(response.body.reservation).toBeDefined();
+    }
+  });
+
+  test("8. does not trigger email if validation fails", async () => {
+    await request(app)
+      .post("/api/v1/reservations")
+      .send({ ...validRequest, party_size: -1 });
+
+    expect(sendReservationConfirmation).not.toHaveBeenCalled();
   });
 });

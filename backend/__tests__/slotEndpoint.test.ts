@@ -17,6 +17,17 @@ jest.mock("../config/firebaseAdmin", () => ({
     },
 }));
 
+jest.mock("../middleware/authenticateToken", () => ({
+    authenticateToken: (_req: any, res: any, next: any) => {
+        res.locals.user = { uid: "test-uid", role: "EMPLOYEE" };
+        next();
+    },
+}));
+
+jest.mock("../middleware/authorizeRole", () => ({
+    authorizeRole: () => (_req: any, _res: any, next: any) => next(),
+}));
+
 const poolQuery = jest.spyOn(pool, "query");
 
 const slotId = "aaaaaaaa-0001-0001-0001-000000000001";
