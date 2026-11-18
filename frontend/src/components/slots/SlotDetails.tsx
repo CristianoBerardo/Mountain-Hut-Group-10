@@ -6,6 +6,15 @@ import type { DiningTableDTO } from "../../dto/TableDTO";
 import { formatDate, formatTime, toDateKey } from "../../utils/slotFormat";
 import NewTableDialog from "./NewTableDialog";
 
+async function getOperationError(action: () => Promise<unknown>): Promise<string | null> {
+    try {
+        await action();
+        return null;
+    } catch (err) {
+        return err instanceof Error ? err.message : "Operation failed";
+    }
+}
+
 interface SlotDetailsProps {
     details: MealSlotDetailsDTO;
     tables: DiningTableDTO[];
@@ -44,28 +53,20 @@ function SlotDetails({ details, tables, onChanged, onDeleted }: SlotDetailsProps
     async function handleTableCreated(table: DiningTableDTO) {
         setBusy(true);
         setError("");
-        let assignmentError = "";
 
         try {
-            try {
-                await addTableToSlot(slot.id, table.id);
-            } catch (err) {
-                assignmentError = err instanceof Error ? err.message : "Operation failed";
-            }
+            const assignmentError = await getOperationError(() =>
+                addTableToSlot(slot.id, table.id),
+            );
+            const refreshError = await getOperationError(onChanged);
 
-            try {
-                await onChanged();
-            } catch (err) {
-                const refreshError = err instanceof Error ? err.message : "Operation failed";
+            if (refreshError) {
                 setError(
                     assignmentError
                         ? `Table created, but could not be added to this slot: ${assignmentError}. Refresh also failed: ${refreshError}`
                         : `Table created and added, but the slot could not be refreshed: ${refreshError}`,
                 );
-                return;
-            }
-
-            if (assignmentError) {
+            } else if (assignmentError) {
                 setError(`Table created, but could not be added to this slot: ${assignmentError}`);
             }
         } finally {
