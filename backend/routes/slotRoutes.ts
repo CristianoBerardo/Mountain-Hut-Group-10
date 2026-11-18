@@ -10,12 +10,16 @@ const slotsController = new SlotsController();
 const slotsTableController = new SlotsTableController();
 
 router.get(
+  "/availability",
+  slotsTableController.checkAvailability.bind(slotsTableController),
+);
+router.get(
   "/",
   authenticateToken,
   authorizeRole(UserRole.EMPLOYEE, UserRole.WARDEN),
   slotsController.getMealSlots.bind(slotsController),
 );
-// Register this static path before /:id and preserve the controller context.
+// Register static paths before /:id and preserve the controller context.
 router.get(
   "/available",
   authenticateToken,

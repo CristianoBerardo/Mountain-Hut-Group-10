@@ -8,6 +8,15 @@ export class SlotsTableController {
     this.slotsTableRepository = new SlotsTableRepository();
   }
 
+  /** Placeholder until the availability-checking endpoint is implemented. */
+  async checkAvailability(
+    _req: Request,
+    res: Response,
+    _next: NextFunction,
+  ): Promise<void> {
+    res.status(501).json({ error: "Availability checking is not implemented yet" });
+  }
+
   /** Handle GET /api/v1/slots/available without accessing the database directly. */
   async getAvailableSlot(
     _req: Request,
