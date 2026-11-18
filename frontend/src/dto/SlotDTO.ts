@@ -38,3 +38,26 @@ export interface AvailableSlotDTO {
     available_seats: number;
     dining_tables: SlotTableDTO[];
 }
+
+export interface CheckAvailabilityRequestDTO {
+    date: string; // 'YYYY-MM-DD'
+    time: string; // 'HH:mm'
+    party_size: number;
+}
+
+export interface CheckAvailabilityTableDTO {
+    table_id: string;
+    table_number: number;
+    seats_assigned: number;
+}
+
+export interface CheckAvailabilityResponseDTO {
+    slot_id: string | null;
+    available_times: string[];
+    date: string;
+    time: string;
+    party_size: number;
+    available: boolean;
+    available_seats: number;
+    tables: CheckAvailabilityTableDTO[];
+}
