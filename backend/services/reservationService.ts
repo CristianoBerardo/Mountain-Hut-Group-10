@@ -1,5 +1,6 @@
 import { PoolClient } from "pg";
 import { pool } from "../connections/PostgreSQL/database";
+import { InsufficientCapacityError } from "../errors/AppError";
 import {
     CreateMealReservationDTO,
     MealReservationResponse,
@@ -79,14 +80,11 @@ export async function createReservation(
         let tableAssignments;
         try {
             tableAssignments = assignTablesToParty(dto.partySize, tablesAvailability);
-        } catch (err: any) {
-            if (err.message === "INSUFFICIENT_CAPACITY") {
-                throw new ReservationBusinessError(
-                    400,
-                    "Not enough seats available for the selected time window."
-                );
+        } catch (error: unknown) {
+            if (error instanceof InsufficientCapacityError) {
+                throw new ReservationBusinessError(400, error.message);
             }
-            throw err;
+            throw error;
         }
 
         const insertReservationQuery = `

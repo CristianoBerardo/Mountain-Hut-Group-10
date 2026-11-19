@@ -1,9 +1,27 @@
 import { NextFunction, Request, Response } from "express";
-import { InvalidRequestError } from "../errors/AppError";
+import {
+  InsufficientCapacityError,
+  InvalidRequestError,
+} from "../errors/AppError";
 import { CheckAvailabilityResponseDTO } from "../models/dto/CheckAvailabilityDTO";
 import { SlotsTableRepository } from "../repository/SlotsTableRepository";
+import { TableAvailability } from "../types/reservationTypes";
 import { assignTablesToParty } from "../utils/tableAssignment";
 import { requiredString } from "../utils/requestValidation";
+
+function assignTablesOrEmpty(
+  partySize: number,
+  tables: TableAvailability[],
+): ReturnType<typeof assignTablesToParty> {
+  try {
+    return assignTablesToParty(partySize, tables);
+  } catch (error) {
+    if (error instanceof InsufficientCapacityError) {
+      return [];
+    }
+    throw error;
+  }
+}
 
 export class SlotsTableController {
   private readonly slotsTableRepository: SlotsTableRepository;
@@ -52,20 +70,10 @@ export class SlotsTableController {
       );
       const availableSeats =
         availability.tables.reduce((total, table) => total + table.freeSeats, 0);
-      let assignments: ReturnType<typeof assignTablesToParty> = [];
-
-      if (availability.slot_id !== null) {
-        try {
-          assignments = assignTablesToParty(partySize, availability.tables);
-        } catch (error) {
-          if (
-            !(error instanceof Error) ||
-            error.message !== "INSUFFICIENT_CAPACITY"
-          ) {
-            throw error;
-          }
-        }
-      }
+      const assignments: ReturnType<typeof assignTablesToParty> =
+        availability.slot_id === null
+          ? []
+          : assignTablesOrEmpty(partySize, availability.tables);
 
       const response: CheckAvailabilityResponseDTO = {
         slot_id: availability.slot_id,

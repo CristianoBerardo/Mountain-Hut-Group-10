@@ -1,3 +1,4 @@
+import { InsufficientCapacityError } from "../errors/AppError";
 import { TableAssignmentResult, TableAvailability } from "../types/reservationTypes";
 
 export function assignTablesToParty(partySize: number, tables: TableAvailability[]): TableAssignmentResult[] {
@@ -27,7 +28,7 @@ export function assignTablesToParty(partySize: number, tables: TableAvailability
     //caso 2: splitting su più tavoli
     const optimalCombination = findOptimalTableCombination(validTables, partySize);
     if (!optimalCombination) {
-        throw new Error("INSUFFICIENT_CAPACITY");
+        throw new InsufficientCapacityError();
     }
 
     //ordinamento per freeSeats decrescente per tenere il gruppo quanto più unito possibile

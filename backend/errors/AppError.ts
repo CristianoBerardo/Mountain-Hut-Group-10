@@ -52,3 +52,13 @@ export class ConflictError extends AppError {
     super(409, "CONFLICT", description);
   }
 }
+
+export class InsufficientCapacityError extends AppError {
+  constructor() {
+    super(
+      409,
+      "INSUFFICIENT_CAPACITY",
+      "Not enough seats available for the selected time window.",
+    );
+  }
+}
