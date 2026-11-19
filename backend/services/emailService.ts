@@ -1,4 +1,5 @@
 import { getEmailConfiguration } from "../config/emailClient";
+import { ReservationEmailDetails } from "../models/dto/ReservationEmailDTO";
 
 export type EmailCopies = {
   cc?: string | string[];
@@ -38,17 +39,6 @@ export async function sendReservationConfirmation(
     text,
     html,
   });
-}
-
-export interface ReservationEmailDetails {
-  hikerName: string;
-  hikerSurname?: string | null;
-  reservationId: string;
-  date: string;
-  startsAt: string;
-  endsAt: string;
-  partySize: number;
-  tables: Array<{ tableNumber: number; seatsAssigned: number }>;
 }
 
 function buildConfirmationText(d: ReservationEmailDetails): string {
