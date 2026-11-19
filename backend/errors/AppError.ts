@@ -21,6 +21,12 @@ export class InternalServerError extends AppError {
   }
 }
 
+export class EmailConfigurationError extends AppError {
+  constructor(description: string = "Email configuration error") {
+    super(500, "EMAIL_CONFIGURATION_ERROR", description);
+  }
+}
+
 export class TokenMissingOrInvalidError extends AppError {
   constructor() {
     super(
