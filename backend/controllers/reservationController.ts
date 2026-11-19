@@ -64,26 +64,38 @@ export class ReservationController {
       };
       const result = await this.reservationRepository.createReservation(input);
 
-
       try {
-        const hiker = await this.userRepository.getUserById({ id: input.hiker_id });
+        const hiker = await this.userRepository.getUserById({
+          id: input.hiker_id,
+        });
         if (hiker.role === UserRole.HIKER) {
           await sendReservationConfirmation(hiker.email, {
             hikerName: hiker.name,
             hikerSurname: hiker.surname,
             reservationId: result.reservation.id,
-            date: result.reservation.starts_at.slice(0, 10),
-            startsAt: new Date(result.reservation.starts_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }),
-            endsAt: new Date(result.reservation.ends_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }),
+            date: new Date(result.reservation.starts_at)
+              .toISOString()
+              .slice(0, 10),
+            startsAt: new Date(result.reservation.starts_at).toLocaleTimeString(
+              "it-IT",
+              { hour: "2-digit", minute: "2-digit", timeZone: "UTC" },
+            ),
+            endsAt: new Date(result.reservation.ends_at).toLocaleTimeString(
+              "it-IT",
+              { hour: "2-digit", minute: "2-digit", timeZone: "UTC" },
+            ),
             partySize: result.reservation.party_size,
-            tables: result.tables.map(t => ({
+            tables: result.tables.map((t) => ({
               tableNumber: t.table_number,
               seatsAssigned: t.seats_assigned,
             })),
           });
         }
       } catch (emailError) {
-        console.error("Reservation created, but failed to send email:", emailError);
+        console.error(
+          "Reservation created, but failed to send email:",
+          emailError,
+        );
       }
       res.status(201).json(result);
     } catch (error) {
