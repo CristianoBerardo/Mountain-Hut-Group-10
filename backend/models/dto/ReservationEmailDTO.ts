@@ -1,6 +1,6 @@
 export interface ReservationEmailDetails {
     hikerName: string;
-    hikerSurname?: string | null;
+    hikerSurname: string;
     reservationId: string;
     date: string;
     startsAt: string;

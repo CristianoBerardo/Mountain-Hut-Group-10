@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from "express";
-import { HikerDTO } from "../models/dto/HikerDTO";
 import { ReservationRepository } from "../repository/ReservationRepository";
 import { UserRepository } from "../repository/UserRepository";
 import { sendReservationConfirmation } from "../services/emailService";
@@ -68,20 +67,21 @@ export class ReservationController {
 
       try {
         const hiker = await this.userRepository.getUserById({ id: input.hiker_id });
-        const hikerSurname = hiker.role === UserRole.HIKER ? (hiker as HikerDTO).surname : null;
-        await sendReservationConfirmation(hiker.email, {
-          hikerName: hiker.name,
-          hikerSurname,
-          reservationId: result.reservation.id,
-          date: result.reservation.starts_at.slice(0, 10),
-          startsAt: new Date(result.reservation.starts_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }),
-          endsAt: new Date(result.reservation.ends_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }),
-          partySize: result.reservation.party_size,
-          tables: result.tables.map(t => ({
-            tableNumber: t.table_number,
-            seatsAssigned: t.seats_assigned,
-          })),
-        });
+        if (hiker.role === UserRole.HIKER) {
+          await sendReservationConfirmation(hiker.email, {
+            hikerName: hiker.name,
+            hikerSurname: hiker.surname,
+            reservationId: result.reservation.id,
+            date: result.reservation.starts_at.slice(0, 10),
+            startsAt: new Date(result.reservation.starts_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }),
+            endsAt: new Date(result.reservation.ends_at).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }),
+            partySize: result.reservation.party_size,
+            tables: result.tables.map(t => ({
+              tableNumber: t.table_number,
+              seatsAssigned: t.seats_assigned,
+            })),
+          });
+        }
       } catch (emailError) {
         console.error("Reservation created, but failed to send email:", emailError);
       }
