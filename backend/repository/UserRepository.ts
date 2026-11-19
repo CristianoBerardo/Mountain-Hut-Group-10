@@ -16,7 +16,7 @@ interface UserRow extends BaseUserDTO {
 }
 
 export class UserRepository {
-  constructor() {}
+  constructor() { }
 
   private toUserDTO(row: UserRow): UserDTO {
     const base: BaseUserDTO = {
@@ -172,4 +172,23 @@ export class UserRepository {
       return throwRepositoryError(error, "Unable to retrieve the user.");
     }
   }
+
+  public async getUserById({ id }: { id: string }): Promise<UserDTO> {
+    try {
+      const userId = requiredString(id, "id");
+      const result = await pool.query<UserRow>(
+        `SELECT * FROM "user" WHERE id = $1`,
+        [userId],
+      );
+
+      if (result.rows.length === 0) {
+        throw new NotFoundError("User not found");
+      }
+
+      return this.toUserDTO(result.rows[0]);
+    } catch (error) {
+      return throwRepositoryError(error, "Unable to retrieve the user.");
+    }
+  }
+
 }
