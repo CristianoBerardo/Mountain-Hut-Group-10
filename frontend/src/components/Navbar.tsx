@@ -1,8 +1,9 @@
 import { MdLogin, MdLogout } from "react-icons/md";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { canManageSlots } from "../utils/roles";
 
 function Navbar() {
+    const location = useLocation();
     const navigate = useNavigate();
 
     const token = sessionStorage.getItem("jwt_token");
@@ -10,6 +11,8 @@ function Navbar() {
     const role = sessionStorage.getItem("role")
 
     const isLoggedIn = !!token;
+    const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
+    const isManageSlotsPage = location.pathname === "/slots";
 
     function handleLogout() {
         // Remove authentication information
@@ -27,7 +30,7 @@ function Navbar() {
             <Link to="/" className="navbar-home-button">
                 Home
             </Link>
-            {isLoggedIn && canManageSlots(role) && (
+            {isLoggedIn && canManageSlots(role) && !isManageSlotsPage && (
                 <Link to="/slots" className="navbar-home-button">
                     Meal slots
                 </Link>
@@ -42,12 +45,12 @@ function Navbar() {
                 <MdLogout size={20} />
                 Logout ({username} - {role})
             </button>
-        ) : (
+        ) : !isAuthPage ? (
             <Link to="/login" className="navbar-auth-button">
                 <MdLogin size={20} />
                 Login
             </Link>
-        )}
+        ) : null}
         </nav>
     );
 }
