@@ -1,5 +1,6 @@
 import { getEmailConfiguration } from "../config/emailClient";
-import { ReservationEmailDetails, sendReservationConfirmation } from "../services/emailService";
+import { ReservationEmailDetails } from "../models/dto/ReservationEmailDTO";
+import { sendReservationConfirmation } from "../services/emailService";
 
 jest.mock("../config/emailClient", () => ({
     getEmailConfiguration: jest.fn(),

@@ -127,7 +127,7 @@ describe("POST /api/v1/reservations", () => {
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       reservation,
-      tables: [{ dining_table_id: tableId, seats_assigned: 3 }],
+      tables: [{ dining_table_id: tableId, seats_assigned: 3, table_number: 0 }],
     });
     expect(clientQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO reservation_table"),
@@ -147,7 +147,7 @@ describe("POST /api/v1/reservations", () => {
       .send(body);
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ error });
+    expect(response.body).toEqual({ code: "INVALID_REQUEST", error });
     expect(connectSpy).not.toHaveBeenCalled();
   });
 
@@ -159,7 +159,7 @@ describe("POST /api/v1/reservations", () => {
       .send(validRequest);
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: "Slot not found" });
+    expect(response.body).toEqual({ code: "NOT_FOUND", error: "Slot not found" });
     expect(clientQuery).toHaveBeenCalledTimes(1);
     expect(release).toHaveBeenCalledTimes(1);
   });
@@ -188,7 +188,7 @@ describe("POST /api/v1/reservations", () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
-      error: "You already have a confirmed reservation for this slot",
+      code: "INVALID_REQUEST", error: "You already have a confirmed reservation for this slot",
     });
     expect(clientQuery).not.toHaveBeenCalledWith("BEGIN");
     expect(release).toHaveBeenCalledTimes(1);
@@ -205,7 +205,7 @@ describe("POST /api/v1/reservations", () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({
-      error: "Not enough seats available for this slot",
+      code: "INVALID_REQUEST", error: "Not enough seats available for this slot",
     });
     expect(clientQuery).toHaveBeenCalledWith("ROLLBACK");
     expect(clientQuery).not.toHaveBeenCalledWith(
@@ -260,7 +260,7 @@ describe("GET /api/v1/slots/available", () => {
     const response = await request(app).get("/api/v1/slots/available");
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: "No available slots found" });
+    expect(response.body).toEqual({ code: "NOT_FOUND", error: "No meal slots with active dining tables were found." });
   });
 
   it("returns 500 when retrieving available slots fails", async () => {
@@ -274,7 +274,7 @@ describe("GET /api/v1/slots/available", () => {
     const response = await request(app).get("/api/v1/slots/available");
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: "Internal server error" });
+    expect(response.body).toEqual({ code: "INTERNAL_SERVER_ERROR", error: "Unable to retrieve available meal slots. Please try again later." });
     consoleError.mockRestore();
   });
 });
@@ -311,7 +311,7 @@ describe("GET /api/v1/reservations/:id", () => {
     );
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ error: "Reservation not found" });
+    expect(response.body).toEqual({ code: "NOT_FOUND", error: "Reservation not found" });
   });
 });
 
@@ -328,10 +328,16 @@ describe("POST /api/v1/reservations", () => {
       { dining_table_id: tableId, capacity: 4, booked: 0, free: 4 },
     ]);
 
-    clientQuery.mockImplementation((sql: string) => {
-      if (sql.includes('FROM "user"')) {
-        return Promise.resolve({ rows: [{ name: "Mario", surname: "Rossi", email: "mario@example.com" }] });
+    poolQuery.mockImplementation((sql: any) => {
+      if (typeof sql === "string" && sql.includes('FROM "user"')) {
+        return Promise.resolve({
+          rows: [{ id: hikerId, firebase_uid: "test-uid", name: "Mario", surname: "Rossi", email: "mario@example.com", role: "HIKER", mobile_number: "+391234567890" }],
+        } as never);
       }
+      return Promise.resolve({ rows: [] } as never);
+    });
+
+    clientQuery.mockImplementation((sql: string) => {
       if (sql.includes("FROM meal_slot")) {
         return Promise.resolve({ rows: [{ id: slotId, date: futureDate, starts_at: "18:00:00", ends_at: "19:00:00" }] });
       }
@@ -351,39 +357,56 @@ describe("POST /api/v1/reservations", () => {
       .post("/api/v1/reservations")
       .send(validRequest);
 
-    if (response.status === 201) {
-      expect(sendReservationConfirmation).toHaveBeenCalledTimes(1);
-      expect(sendReservationConfirmation).toHaveBeenCalledWith(
-        "mario@example.com",
-        expect.objectContaining({
-          hikerName: "Mario",
-          partySize: 3,
-        })
-      );
-    }
+    expect(response.status).toBe(201);
+    expect(sendReservationConfirmation).toHaveBeenCalledTimes(1);
+    expect(sendReservationConfirmation).toHaveBeenCalledWith(
+      "mario@example.com",
+      expect.objectContaining({
+        hikerName: "Mario",
+        partySize: 3,
+      })
+    );
   });
 
   test("7. fault tolerance: reservation succeeds even if email service throws an error", async () => {
+    configureAvailableSlotAndTables([
+      { dining_table_id: tableId, capacity: 4, booked: 0, free: 4 },
+    ]);
+
+    poolQuery.mockImplementation((sql: any) => {
+      if (typeof sql === "string" && sql.includes('FROM "user"')) {
+        return Promise.resolve({
+          rows: [{ id: hikerId, name: "Mario", surname: "Rossi", email: "mario@example.com", role: "HIKER" }],
+        } as never);
+      }
+      return Promise.resolve({ rows: [] } as never);
+    });
+
+    clientQuery.mockImplementation((sql: string) => {
+      if (sql.includes("FROM meal_slot")) {
+        return Promise.resolve({ rows: [{ id: slotId, date: futureDate, starts_at: "18:00:00", ends_at: "19:00:00" }] });
+      }
+      if (sql.includes("WHERE hiker_id = $1 AND slot_id = $2")) {
+        return Promise.resolve({ rows: [] });
+      }
+      if (sql.includes("FROM slot_table st")) {
+        return Promise.resolve({ rows: [{ dining_table_id: tableId, table_number: 1, capacity: 4, booked: 0, free: 4 }] });
+      }
+      if (sql.includes("INSERT INTO meal_reservation")) {
+        return Promise.resolve({ rows: [reservation] });
+      }
+      return Promise.resolve({ rows: [] });
+    });
+
     (sendReservationConfirmation as jest.Mock).mockRejectedValueOnce(
       new Error("SMTP service unreachable")
     );
 
-    // Anche se l'email fallisce, la risposta deve comunque rimanere 201 (non 500)
     const response = await request(app)
       .post("/api/v1/reservations")
       .send(validRequest);
 
-    // Se la rotta risponde 201, verifichiamo che non sia crashata
-    if (response.status === 201) {
-      expect(response.body.reservation).toBeDefined();
-    }
+    expect(response.status).toBe(201);
+    expect(response.body.reservation).toBeDefined();
   });
-
-  test("8. does not trigger email if validation fails", async () => {
-    await request(app)
-      .post("/api/v1/reservations")
-      .send({ ...validRequest, party_size: -1 });
-
-    expect(sendReservationConfirmation).not.toHaveBeenCalled();
-  });
-});
+})

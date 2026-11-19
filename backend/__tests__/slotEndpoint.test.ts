@@ -69,14 +69,13 @@ describe("POST /api/v1/slots (Create Slot)", () => {
     });
 
     it.each([
-        [{ ...validSlotRequest, date: undefined }, "date, starts_at and ends_at are required"],
-        [{ ...validSlotRequest, starts_at: undefined }, "date, starts_at and ends_at are required"],
-        [{ ...validSlotRequest, ends_at: undefined }, "date, starts_at and ends_at are required"],
+        [{ ...validSlotRequest, date: undefined }, "date is required"],
+        [{ ...validSlotRequest, starts_at: undefined }, "starts_at is required"],
+        [{ ...validSlotRequest, ends_at: undefined }, "ends_at is required"],
     ])("rejects slot creation with missing fields", async (body, error) => {
         const response = await request(app).post("/api/v1/slots").send(body);
-
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ error });
+        expect(response.body).toEqual({ code: "INVALID_REQUEST", error });
         expect(poolQuery).not.toHaveBeenCalled();
     });
 
@@ -88,7 +87,7 @@ describe("POST /api/v1/slots (Create Slot)", () => {
             .send(validSlotRequest);
 
         expect(response.status).toBe(409);
-        expect(response.body).toEqual({ error: "Slot already exists" });
+        expect(response.body).toEqual({ code: "CONFLICT", error: "Slot already exists" });
     });
 
     it("returns 500 on unexpected database failure", async () => {
@@ -100,7 +99,7 @@ describe("POST /api/v1/slots (Create Slot)", () => {
             .send(validSlotRequest);
 
         expect(response.status).toBe(500);
-        expect(response.body).toEqual({ error: "Internal server error" });
+        expect(response.body).toEqual({ code: "INTERNAL_SERVER_ERROR", error: "Unable to create the meal slot." });
         consoleSpy.mockRestore();
     });
 });
@@ -147,7 +146,7 @@ describe("GET /api/v1/slots/:id", () => {
         const response = await request(app).get(`/api/v1/slots/${slotId}`);
 
         expect(response.status).toBe(404);
-        expect(response.body).toEqual({ error: "Slot not found" });
+        expect(response.body).toEqual({ code: "NOT_FOUND", error: "Slot not found" });
     });
 });
 
@@ -187,7 +186,7 @@ describe("GET /api/v1/slots/:id/details (Configuration Reuse)", () => {
         const response = await request(app).get(`/api/v1/slots/${slotId}/details`);
 
         expect(response.status).toBe(404);
-        expect(response.body).toEqual({ error: "Slot not found" });
+        expect(response.body).toEqual({ code: "NOT_FOUND", error: "Slot not found" });
     });
 });
 
@@ -225,7 +224,7 @@ describe("POST /api/v1/slots/:id/tables (Assign Table to Slot)", () => {
             .send({});
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ error: "dining_table_id is required" });
+        expect(response.body).toEqual({ code: "INVALID_REQUEST", error: "dining_table_id is required" });
     });
 
     it("returns 404 if the slot is not found", async () => {
@@ -236,7 +235,7 @@ describe("POST /api/v1/slots/:id/tables (Assign Table to Slot)", () => {
             .send({ dining_table_id: tableId });
 
         expect(response.status).toBe(404);
-        expect(response.body).toEqual({ error: "Slot not found" });
+        expect(response.body).toEqual({ code: "NOT_FOUND", error: "Slot not found" });
     });
 
     it("returns 404 if the table is not found or is inactive", async () => {
@@ -249,7 +248,7 @@ describe("POST /api/v1/slots/:id/tables (Assign Table to Slot)", () => {
             .send({ dining_table_id: tableId });
 
         expect(response.status).toBe(404);
-        expect(response.body).toEqual({ error: "Table not found or inactive" });
+        expect(response.body).toEqual({ code: "NOT_FOUND", error: "Table not found or inactive" });
     });
 });
 
@@ -293,7 +292,7 @@ describe("DELETE /api/v1/slots/:id/tables/:tableId (Remove Table from Slot)", ()
         );
 
         expect(response.status).toBe(404);
-        expect(response.body).toEqual({ error: "Table not associated with this slot" });
+        expect(response.body).toEqual({ code: "NOT_FOUND", error: "Table not associated with this slot" });
     });
 });
 
@@ -317,6 +316,6 @@ describe("DELETE /api/v1/slots/:id (Delete Slot)", () => {
         const response = await request(app).delete(`/api/v1/slots/${slotId}`);
 
         expect(response.status).toBe(404);
-        expect(response.body).toEqual({ error: "Slot not found" });
+        expect(response.body).toEqual({ code: "NOT_FOUND", error: "Slot not found" });
     });
 });
