@@ -81,7 +81,7 @@ describe("EmailService - Reservation Confirmation (US3 Unit Tests)", () => {
     test("4. formats greeting correctly when surname is null or omitted", async () => {
         const detailsWithoutSurname: ReservationEmailDetails = {
             ...mockDetails,
-            hikerSurname: null,
+            hikerSurname: "",
         };
 
         await sendReservationConfirmation("mario@example.com", detailsWithoutSurname);

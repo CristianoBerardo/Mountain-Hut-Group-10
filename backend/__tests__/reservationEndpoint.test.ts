@@ -67,6 +67,7 @@ const validRequest = {
 function configureAvailableSlotAndTables(
   tables: Array<{
     dining_table_id: string;
+    table_number?: number;
     capacity: number;
     booked: number;
     free: number;
@@ -117,7 +118,7 @@ describe("POST /api/v1/reservations", () => {
   it("books an available table for the requested party size", async () => {
     configureAvailableSlotAndTables([
       { dining_table_id: "table-large", capacity: 6, booked: 0, free: 6 },
-      { dining_table_id: tableId, capacity: 4, booked: 0, free: 4 },
+      { dining_table_id: tableId, table_number: 1, capacity: 4, booked: 0, free: 4 },
     ]);
 
     const response = await request(app)
@@ -127,7 +128,7 @@ describe("POST /api/v1/reservations", () => {
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
       reservation,
-      tables: [{ dining_table_id: tableId, seats_assigned: 3, table_number: 0 }],
+      tables: [{ dining_table_id: tableId, seats_assigned: 3, table_number: 1 }],
     });
     expect(clientQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO reservation_table"),
