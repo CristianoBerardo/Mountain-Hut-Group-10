@@ -17,7 +17,7 @@ export interface CreateSlotDTO {
 
 // GET /api/v1/slots response item
 export interface SlotAvailabilityDTO {
-  slot_id: string;
+  meal_slot_id: string;
   date: string;
   starts_at: string;
   ends_at: string;

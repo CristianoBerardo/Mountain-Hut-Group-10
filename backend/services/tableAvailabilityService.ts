@@ -17,7 +17,7 @@ export async function getTablesAvailability(
       (dt.capacity - COALESCE(SUM(rt.seats_assigned), 0))::smallint AS free_seats
     FROM dining_table dt
     LEFT JOIN reservation_table rt ON rt.dining_table_id = dt.id
-    LEFT JOIN meal_reservation mr ON mr.id = rt.reservation_id 
+    LEFT JOIN meal_reservation mr ON mr.id = rt.meal_reservation_id
       AND mr.status = 'CONFIRMED'
       -- Condizione standard di overlap temporale: (StartA < EndB) AND (EndA > StartB)
       AND mr.starts_at < $2 

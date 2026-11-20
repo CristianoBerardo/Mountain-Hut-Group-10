@@ -61,7 +61,7 @@ function CheckAvailability() {
   function goToBooking() {
     if (
       !result?.available ||
-      result.slot_id === null ||
+      result.meal_slot_id === null ||
       redirecting ||
       !canContinueToBooking
     ) {
@@ -72,7 +72,7 @@ function CheckAvailability() {
       sessionStorage.setItem(
         "tableAvailabilitySearch",
         JSON.stringify({
-          slot_id: result.slot_id,
+          meal_slot_id: result.meal_slot_id,
           party_size: result.party_size,
           expires_at: Date.now() + 5 * 60 * 1000,
         }),
@@ -171,10 +171,10 @@ function CheckAvailability() {
                 {result.available ? "Availability confirmed" : "Not available"}
               </h2>
 
-              {result.slot_id === null &&
+              {result.meal_slot_id === null &&
               result.available_times.length === 0 ? (
                 <p>No meal service is scheduled for this date and time.</p>
-              ) : result.slot_id === null ? (
+              ) : result.meal_slot_id === null ? (
                 <>
                   <p>
                     No meal slot starts at {result.time}. Available start times

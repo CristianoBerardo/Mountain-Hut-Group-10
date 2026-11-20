@@ -30,7 +30,7 @@ describe("GET /api/v1/slots/availability", () => {
       rows: [
         {
           available_times: ["12:00"],
-          slot_id: slotId,
+          meal_slot_id: slotId,
           table_id: "bbbbbbbb-0001-0001-0001-000000000001",
           table_number: 1,
           capacity: 2,
@@ -38,7 +38,7 @@ describe("GET /api/v1/slots/availability", () => {
           free_seats: 2,
         },
         {
-          slot_id: slotId,
+          meal_slot_id: slotId,
           table_id: "bbbbbbbb-0002-0002-0002-000000000002",
           table_number: 2,
           capacity: 4,
@@ -46,7 +46,7 @@ describe("GET /api/v1/slots/availability", () => {
           free_seats: 3,
         },
         {
-          slot_id: slotId,
+          meal_slot_id: slotId,
           table_id: "bbbbbbbb-0003-0003-0003-000000000003",
           table_number: 3,
           capacity: 2,
@@ -62,7 +62,7 @@ describe("GET /api/v1/slots/availability", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
-      slot_id: slotId,
+      meal_slot_id: slotId,
       available_times: ["12:00"],
       date: testDate,
       time: "12:00",
@@ -98,7 +98,7 @@ describe("GET /api/v1/slots/availability", () => {
       rows: [
         {
           available_times: ["12:00"],
-          slot_id: slotId,
+          meal_slot_id: slotId,
           table_id: "bbbbbbbb-0001-0001-0001-000000000001",
           table_number: 1,
           capacity: 2,
@@ -148,7 +148,7 @@ describe("GET /api/v1/slots/availability", () => {
       rows: [
         {
           available_times: [],
-          slot_id: null,
+          meal_slot_id: null,
           table_id: null,
           table_number: null,
           capacity: null,
@@ -164,7 +164,7 @@ describe("GET /api/v1/slots/availability", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
-      slot_id: null,
+      meal_slot_id: null,
       available_times: [],
       date: testDate,
       time: "12:00",
@@ -180,7 +180,7 @@ describe("GET /api/v1/slots/availability", () => {
       rows: [
         {
           available_times: ["12:00", "18:30"],
-          slot_id: null,
+          meal_slot_id: null,
           table_id: null,
           table_number: null,
           capacity: null,
@@ -196,7 +196,7 @@ describe("GET /api/v1/slots/availability", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
-      slot_id: null,
+      meal_slot_id: null,
       available_times: ["12:00", "18:30"],
       available: false,
     });

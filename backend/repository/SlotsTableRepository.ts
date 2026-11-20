@@ -6,7 +6,7 @@ import { throwRepositoryError } from "./utils/repositoryErrors";
 
 interface SlotAvailabilityRow {
   available_times: string[];
-  slot_id: string | null;
+  meal_slot_id: string | null;
   table_id: string | null;
   table_number: number | null;
   capacity: number | null;
@@ -16,7 +16,7 @@ interface SlotAvailabilityRow {
 
 interface SlotAvailability {
   available_times: string[];
-  slot_id: string | null;
+  meal_slot_id: string | null;
   tables: TableAvailability[];
 }
 
@@ -58,7 +58,7 @@ export class SlotsTableRepository {
              ),
              ARRAY[]::text[]
            ) AS available_times,
-           target_slot.id AS slot_id,
+           target_slot.id AS meal_slot_id,
            dt.id AS table_id,
            dt.table_number,
            dt.capacity,
@@ -81,7 +81,7 @@ export class SlotsTableRepository {
 
       return {
         available_times: result.rows[0].available_times,
-        slot_id: result.rows[0].slot_id,
+        meal_slot_id: result.rows[0].meal_slot_id,
         tables: result.rows.flatMap((row) => {
           if (
             row.table_id === null ||
@@ -119,7 +119,7 @@ export class SlotsTableRepository {
       // The shared dining_table.occupancy value is not used for slot availability.
       const query = `
       SELECT
-          ms.id                                                           AS meal_slot_id,
+          ms.id AS meal_slot_id,
           ms.date,
           ms.starts_at,
           ms.ends_at,
@@ -146,14 +146,14 @@ export class SlotsTableRepository {
       LEFT JOIN (
           -- Compute booked seats per (slot, dining_table) from confirmed reservations only
           SELECT
-              mr.meal_slot_id AS slot_id,
+              mr.meal_slot_id AS meal_slot_id,
               rt.dining_table_id,
               SUM(rt.seats_assigned)::INT AS booked_seats
           FROM reservation_table rt
           JOIN meal_reservation mr ON mr.id = rt.meal_reservation_id
           WHERE mr.status = 'CONFIRMED'
           GROUP BY mr.meal_slot_id, rt.dining_table_id
-      ) booked ON booked.slot_id = ms.id
+      ) booked ON booked.meal_slot_id = ms.id
              AND booked.dining_table_id = dt.id
       GROUP BY ms.id, ms.date, ms.starts_at, ms.ends_at
       ORDER BY ms.date ASC, ms.starts_at ASC;

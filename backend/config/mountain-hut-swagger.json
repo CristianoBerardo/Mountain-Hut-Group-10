@@ -788,7 +788,7 @@
                 "schema": {
                   "type": "object",
                   "required": [
-                    "slot_id",
+                    "meal_slot_id",
                     "available_times",
                     "date",
                     "time",
@@ -798,7 +798,7 @@
                     "tables"
                   ],
                   "properties": {
-                    "slot_id": {
+                    "meal_slot_id": {
                       "type": "string",
                       "nullable": true
                     },
@@ -1148,7 +1148,7 @@
             "format": "date-time",
             "example": "2026-11-03T15:00:00Z"
           },
-          "slot_id": {
+          "meal_slot_id": {
             "type": "string",
             "format": "uuid",
             "example": "aaaaaaaa-0001-0001-0001-000000000001"
@@ -1169,7 +1169,7 @@
           "hiker_id",
           "starts_at",
           "ends_at",
-          "slot_id",
+          "meal_slot_id",
           "party_size",
           "status"
         ],
@@ -1189,7 +1189,7 @@
             "format": "date-time",
             "example": "2026-11-03T15:00:00Z"
           },
-          "slot_id": {
+          "meal_slot_id": {
             "type": "string",
             "format": "uuid",
             "example": "aaaaaaaa-0001-0001-0001-000000000001"

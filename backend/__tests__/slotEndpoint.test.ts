@@ -303,7 +303,7 @@ describe("DELETE /api/v1/slots/:id/tables/:tableId (Remove Table from Slot)", ()
 
   it("returns 409 Conflict if active reservations exist for the table on that slot", async () => {
     poolQuery.mockResolvedValueOnce({
-      rows: [{ reservation_id: "res-1" }],
+      rows: [{ meal_reservation_id: "res-1" }],
     } as never);
 
     const response = await request(app).delete(

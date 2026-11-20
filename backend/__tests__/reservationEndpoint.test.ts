@@ -250,7 +250,7 @@ describe("GET /api/v1/slots/available", () => {
   it("returns available slots and their table availability", async () => {
     const availableSlots = [
       {
-        slot_id: slotId,
+        meal_slot_id: slotId,
         date: futureDate,
         starts_at: "18:00:00",
         ends_at: "19:00:00",
