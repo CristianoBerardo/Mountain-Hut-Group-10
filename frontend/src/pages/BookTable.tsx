@@ -160,6 +160,8 @@ function BookTable() {
                 party_size: size
             });
 
+            sessionStorage.removeItem("tableAvailabilitySearch");
+
             setBooking({ slot, partySize: size, tables: result.tables });
         } catch (err) {
             setError(serverMessage(err));
