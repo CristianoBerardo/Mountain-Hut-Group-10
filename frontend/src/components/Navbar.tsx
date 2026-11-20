@@ -3,56 +3,58 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { canManageSlots } from "../utils/roles";
 
 function Navbar() {
-    const location = useLocation();
-    const navigate = useNavigate();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-    const token = sessionStorage.getItem("jwt_token");
-    const username = sessionStorage.getItem("name");
-    const role = sessionStorage.getItem("role")
+  const token = sessionStorage.getItem("jwt_token");
+  const username = sessionStorage.getItem("name");
+  const role = sessionStorage.getItem("role");
 
-    const isLoggedIn = !!token;
-    const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
-    const isManageSlotsPage = location.pathname === "/slots";
+  const isLoggedIn = !!token;
+  const isAuthPage =
+    location.pathname === "/login" || location.pathname === "/register";
+  const isManageSlotsPage = location.pathname === "/slots";
 
-    function handleLogout() {
-        // Remove authentication information
-        sessionStorage.removeItem("jwt_token");
-        sessionStorage.removeItem("name");
-        sessionStorage.removeItem("role");
-        sessionStorage.removeItem("user_id");
+  function handleLogout() {
+    // Remove authentication information
+    sessionStorage.removeItem("jwt_token");
+    sessionStorage.removeItem("name");
+    sessionStorage.removeItem("role");
+    sessionStorage.removeItem("user_id");
+    sessionStorage.removeItem("tableAvailabilitySearch");
 
-        // Redirect to Home
-        navigate("/");
-    }
-    return (
-        <nav className="navbar">
-        <div className="navbar-links">
-            <Link to="/" className="navbar-home-button">
-                Home
-            </Link>
-            {isLoggedIn && canManageSlots(role) && !isManageSlotsPage && (
-                <Link to="/slots" className="navbar-home-button">
-                    Meal slots
-                </Link>
-            )}
-        </div>
-        {isLoggedIn ? (
-            <button
-                type="button"
-                onClick={handleLogout}
-                className="navbar-auth-button"
-            >
-                <MdLogout size={20} />
-                Logout ({username} - {role})
-            </button>
-        ) : !isAuthPage ? (
-            <Link to="/login" className="navbar-auth-button">
-                <MdLogin size={20} />
-                Login
-            </Link>
-        ) : null}
-        </nav>
-    );
+    // Redirect to Home
+    navigate("/");
+  }
+  return (
+    <nav className="navbar">
+      <div className="navbar-links">
+        <Link to="/" className="navbar-home-button">
+          Home
+        </Link>
+        {isLoggedIn && canManageSlots(role) && !isManageSlotsPage && (
+          <Link to="/slots" className="navbar-home-button">
+            Meal slots
+          </Link>
+        )}
+      </div>
+      {isLoggedIn ? (
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="navbar-auth-button"
+        >
+          <MdLogout size={20} />
+          Logout ({username} - {role})
+        </button>
+      ) : !isAuthPage ? (
+        <Link to="/login" className="navbar-auth-button">
+          <MdLogin size={20} />
+          Login
+        </Link>
+      ) : null}
+    </nav>
+  );
 }
 
 export default Navbar;

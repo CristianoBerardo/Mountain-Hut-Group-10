@@ -31,11 +31,16 @@ function Home() {
                                 <Link className="landing-button landing-button-primary" to="/book">
                                     Book a table <ArrowRight size={18} />
                                 </Link>
-                            ) : !isLoggedIn ? (
-                                <Link className="landing-button landing-button-primary" to="/login">
-                                    Plan your visit <ArrowRight size={18} />
+                            ) : (
+                                <Link className="landing-button landing-button-primary" to="/availability">
+                                    Check availability <ArrowRight size={18} />
                                 </Link>
-                            ) : null}
+                            )}
+                            {isLoggedIn && canBookTable(role) && (
+                                <Link className="landing-button landing-button-secondary" to="/availability">
+                                    Check availability <ArrowRight size={18} />
+                                </Link>
+                            )}
                             <a className="landing-button landing-button-secondary" href="#visit">
                                 Discover the hut <ArrowDown size={18} />
                             </a>
@@ -101,8 +106,8 @@ function Home() {
                         <h2>Your next mountain moment starts here.</h2>
                     </div>
                     {(!isLoggedIn || canBookTable(role)) && (
-                        <Link className="landing-button landing-button-light" to={isLoggedIn ? "/book" : "/login"}>
-                            {isLoggedIn ? "Book a table" : "Join us at the hut"}
+                        <Link className="landing-button landing-button-light" to="/availability">
+                            Check availability
                             <ArrowRight size={18} />
                         </Link>
                     )}
