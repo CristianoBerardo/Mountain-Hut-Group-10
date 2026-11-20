@@ -27,3 +27,10 @@
   margin: 0;
   padding-left: 20px;
 }
+
+.availability-result .client-button {
+  display: block;
+  max-width: 100%;
+  margin: 20px auto 0;
+  padding: 12px 24px;
+}
