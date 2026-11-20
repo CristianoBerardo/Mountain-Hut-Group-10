@@ -11,7 +11,7 @@ export interface CreateSlotDTO {
   ends_at: string; // 'HH:MM'
   tables: Array<{
     dining_table_id: string;
-    seats_in_slot: number;
+    seats_in_meal_slot: number;
   }>;
 }
 
