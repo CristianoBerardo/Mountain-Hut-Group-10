@@ -1,6 +1,6 @@
 // POST /api/v1/reservations  (US1)
 export interface CreateReservationDTO {
-  slot_id: string; // which slot to book
+  meal_slot_id: string; // which slot to book
   party_size: number; // number of people
 }
 

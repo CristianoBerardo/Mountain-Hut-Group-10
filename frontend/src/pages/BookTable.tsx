@@ -206,7 +206,7 @@ function BookTable() {
     try {
       const result = await createReservation({
         hiker_id: hikerId,
-        slot_id: slot.slot_id,
+        meal_slot_id: slot.slot_id,
         party_size: size,
       });
 

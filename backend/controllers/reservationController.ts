@@ -59,7 +59,7 @@ export class ReservationController {
       const body = requestObject(req.body);
       const input = {
         hiker_id: requiredString(body.hiker_id, "hiker_id"),
-        slot_id: requiredString(body.slot_id, "slot_id"),
+        meal_slot_id: requiredString(body.meal_slot_id, "meal_slot_id"),
         party_size: positiveInteger(body.party_size, "party_size"),
       };
       const result = await this.reservationRepository.createReservation(input);
