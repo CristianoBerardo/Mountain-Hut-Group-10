@@ -1,10 +1,9 @@
 import { MdLogin, MdLogout } from "react-icons/md";
-import { Link, useLocation, useNavigate } from "react-router-dom";
 import { canManageSlots } from "../utils/roles";
+import { useLocation, Link } from "react-router-dom";
 
 function Navbar() {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const token = sessionStorage.getItem("jwt_token");
   const username = sessionStorage.getItem("name");
@@ -24,7 +23,7 @@ function Navbar() {
     sessionStorage.removeItem("tableAvailabilitySearch");
 
     // Redirect to Home
-    navigate("/");
+    window.location.replace("/");
   }
   return (
     <nav className="navbar">
