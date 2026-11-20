@@ -68,8 +68,9 @@ function CheckAvailability() {
           expires_at: Date.now() + 5 * 60 * 1000,
         }),
       );
-
-      navigate("/login");
+      // In Login.tsx we have a function that redirects the user to the "previous seen page", we force that the
+      // previous page was "/book"
+      navigate("/login", { state: { from: "/book" } });
     } catch {
       setError("Something went wrong, try again.");
       setRedirecting(false);
@@ -190,6 +191,16 @@ function CheckAvailability() {
                       </li>
                     ))}
                   </ul>
+                  <button
+                    type="button"
+                    className="client-button"
+                    onClick={goToLogin}
+                    disabled={redirecting}
+                  >
+                    {redirecting
+                      ? "Redirecting..."
+                      : "Go to Login to reserve this table"}
+                  </button>
                 </>
               ) : (
                 <p>
@@ -198,18 +209,6 @@ function CheckAvailability() {
                     : `Only ${result.available_seats} ${
                         result.available_seats === 1 ? "seat is" : "seats are"
                       } free, but your party needs ${result.party_size}.`}
-                  {result.available && (
-                    <button
-                      type="button"
-                      className="client-button"
-                      onClick={goToLogin}
-                      disabled={redirecting}
-                    >
-                      {redirecting
-                        ? "Redirecting..."
-                        : "Go to Login to reserve this table"}
-                    </button>
-                  )}
                 </p>
               )}
             </section>
