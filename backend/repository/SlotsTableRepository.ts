@@ -1,8 +1,8 @@
 import { pool } from "../connections/PostgreSQL/database";
 import { NotFoundError } from "../errors/AppError";
 import { AvailableTableSlotDTO } from "../models/dto/AvailableTableSlotDTO";
-import { throwRepositoryError } from "./utils/repositoryErrors";
 import { TableAvailability } from "../types/reservationTypes";
+import { throwRepositoryError } from "./utils/repositoryErrors";
 
 interface SlotAvailabilityRow {
   available_times: string[];
@@ -41,14 +41,14 @@ export class SlotsTableRepository {
          ),
          booked AS (
            SELECT
-             mr.slot_id,
+             mr.meal_slot_id,
              rt.dining_table_id,
              SUM(rt.seats_assigned)::INT AS booked_seats
            FROM reservation_table rt
-           JOIN meal_reservation mr ON mr.id = rt.reservation_id
+           JOIN meal_reservation mr ON mr.id = rt.meal_reservation_id
            WHERE mr.status = 'CONFIRMED'
-             AND mr.slot_id IN (SELECT id FROM target_slot)
-           GROUP BY mr.slot_id, rt.dining_table_id
+             AND mr.meal_slot_id IN (SELECT id FROM target_slot)
+           GROUP BY mr.meal_slot_id, rt.dining_table_id
          )
          SELECT
            COALESCE(
@@ -68,12 +68,12 @@ export class SlotsTableRepository {
            )::INT AS free_seats
          FROM (SELECT 1) AS seed
          LEFT JOIN target_slot ON TRUE
-         LEFT JOIN slot_table st ON st.slot_id = target_slot.id
+         LEFT JOIN slot_table st ON st.meal_slot_id = target_slot.id
          LEFT JOIN dining_table dt
                 ON dt.id = st.dining_table_id
                AND dt.is_active = TRUE
          LEFT JOIN booked
-           ON booked.slot_id = target_slot.id
+           ON booked.meal_slot_id = target_slot.id
           AND booked.dining_table_id = dt.id
          ORDER BY dt.table_number ASC`,
         [date, time],
@@ -119,7 +119,7 @@ export class SlotsTableRepository {
       // The shared dining_table.occupancy value is not used for slot availability.
       const query = `
       SELECT
-          ms.id                                                           AS slot_id,
+          ms.id                                                           AS meal_slot_id,
           ms.date,
           ms.starts_at,
           ms.ends_at,
@@ -140,19 +140,19 @@ export class SlotsTableRepository {
               ORDER BY dt.table_number ASC
           )                                                              AS dining_tables
       FROM meal_slot ms
-      INNER JOIN slot_table st   ON st.slot_id = ms.id
+      INNER JOIN slot_table st   ON st.meal_slot_id = ms.id
       INNER JOIN dining_table dt ON dt.id = st.dining_table_id
                                  AND dt.is_active = TRUE
       LEFT JOIN (
           -- Compute booked seats per (slot, dining_table) from confirmed reservations only
           SELECT
-              mr.slot_id,
+              mr.meal_slot_id AS slot_id,
               rt.dining_table_id,
               SUM(rt.seats_assigned)::INT AS booked_seats
           FROM reservation_table rt
-          JOIN meal_reservation mr ON mr.id = rt.reservation_id
+          JOIN meal_reservation mr ON mr.id = rt.meal_reservation_id
           WHERE mr.status = 'CONFIRMED'
-          GROUP BY mr.slot_id, rt.dining_table_id
+          GROUP BY mr.meal_slot_id, rt.dining_table_id
       ) booked ON booked.slot_id = ms.id
              AND booked.dining_table_id = dt.id
       GROUP BY ms.id, ms.date, ms.starts_at, ms.ends_at
