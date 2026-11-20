@@ -4,6 +4,7 @@ import { checkTableAvailability } from "../api/slotAPI";
 import "../App.css";
 import Navbar from "../components/Navbar";
 import type { CheckAvailabilityResponseDTO } from "../dto/SlotDTO";
+import { canBookTable } from "../utils/roles";
 import "../styles/BookTable.css";
 import "../styles/CheckAvailability.css";
 
@@ -19,6 +20,9 @@ function CheckAvailability() {
   );
 
   const navigate = useNavigate();
+  const isLoggedIn = !!sessionStorage.getItem("jwt_token");
+  const role = sessionStorage.getItem("role");
+  const canContinueToBooking = !isLoggedIn || canBookTable(role);
 
   function clearResult() {
     setError("");
@@ -54,8 +58,13 @@ function CheckAvailability() {
     }
   }
 
-  async function goToLogin() {
-    if (!result?.available || result.slot_id === null || redirecting) {
+  function goToBooking() {
+    if (
+      !result?.available ||
+      result.slot_id === null ||
+      redirecting ||
+      !canContinueToBooking
+    ) {
       return;
     }
     setRedirecting(true);
@@ -68,9 +77,11 @@ function CheckAvailability() {
           expires_at: Date.now() + 5 * 60 * 1000,
         }),
       );
-      // In Login.tsx we have a function that redirects the user to the "previous seen page", we force that the
-      // previous page was "/book"
-      navigate("/login", { state: { from: "/book" } });
+      if (isLoggedIn) {
+        navigate("/book");
+      } else {
+        navigate("/login", { state: { from: "/book" } });
+      }
     } catch {
       setError("Something went wrong, try again.");
       setRedirecting(false);
@@ -191,16 +202,20 @@ function CheckAvailability() {
                       </li>
                     ))}
                   </ul>
-                  <button
-                    type="button"
-                    className="client-button"
-                    onClick={goToLogin}
-                    disabled={redirecting}
-                  >
-                    {redirecting
-                      ? "Redirecting..."
-                      : "Go to Login to reserve this table"}
-                  </button>
+                  {canContinueToBooking && (
+                    <button
+                      type="button"
+                      className="client-button"
+                      onClick={goToBooking}
+                      disabled={redirecting}
+                    >
+                      {redirecting
+                        ? "Redirecting..."
+                        : isLoggedIn
+                          ? "Continue to booking"
+                          : "Go to Login to reserve this table"}
+                    </button>
+                  )}
                 </>
               ) : (
                 <p>
