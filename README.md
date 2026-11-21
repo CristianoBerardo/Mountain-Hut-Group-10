@@ -38,6 +38,8 @@ mountain-hut-group-10/
 ├── compose.yaml
 ├── .env
 ├── mountain-hut-group-10-firebase.json
+├── gmail-account.json
+└── mountain-hut-group-10.apps.googleusercontent.com.json
 ```
 
 ### Compose.yaml
@@ -59,6 +61,8 @@ services:
       DB_NAME: ${DB_NAME}
     volumes:
       - ./mountain-hut-group-10-firebase.json:/app/backend/secrets/mountain-hut-group-10-firebase.json:ro
+      - ./gmail-account.json:/app/backend/secrets/gmail-account.json:ro
+      - ./mountain-hut-group-10.apps.googleusercontent.com.json:/app/backend/secrets/mountain-hut-group-10.apps.googleusercontent.com.json:ro
     restart: unless-stopped
 ```
 
@@ -92,6 +96,30 @@ You can also create your own firebase auth service account and download it from 
   "auth_provider_x509_cert_url": "your-auth-provider-x509-cert-url",
   "client_x509_cert_url": "your-client-x509-cert-url",
   "universe_domain": "your-universe-domain"
+}
+```
+
+### gmail-account.json
+
+```JSON
+{
+  "user": "reservations.mountainhut10@gmail.com",
+  "refresh_token": "token"
+}
+```
+
+### mountain-hut-group-10.apps.googleusercontent.com.json
+
+```JSON
+{
+  "web": {
+    "client_id": "your-client",
+    "project_id": "Your-project-id",
+    "auth_uri": "your-auth-uri",
+    "token_uri": "your-token-uri",
+    "auth_provider_x509_cert_url": "your-auth-provider-x509-cert-url",
+    "client_secret": "your-client-secret",
+  }
 }
 ```
 
