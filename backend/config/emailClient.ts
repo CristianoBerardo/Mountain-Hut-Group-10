@@ -21,7 +21,9 @@ function readSecret(fileName: string): Secret {
   }
   // the file does not contain a JSON object
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new EmailConfigurationError(`${fileName} must contain a JSON object.`);
+    throw new EmailConfigurationError(
+      `${fileName} must contain a JSON object.`,
+    );
   }
   return value as Secret;
 }
@@ -29,33 +31,14 @@ function readSecret(fileName: string): Secret {
 // Email is a required field
 function requiredString(value: unknown, field: string): string {
   if (typeof value !== "string" || !value.trim()) {
-    throw new EmailConfigurationError(`Missing email configuration field: ${field}`);
+    throw new EmailConfigurationError(
+      `Missing email configuration field: ${field}`,
+    );
   }
   return value.trim();
 }
 
-// Both authorization and SMTP use exactly the same OAuth client credentials.
-export function getGoogleOAuthCredentials() {
-  const oauth = readSecret(
-    "mountain-hut-group-10.apps.googleusercontent.com.json",
-  );
-  const credentials = oauth.web ?? oauth.installed ?? oauth;
-  if (
-    !credentials ||
-    typeof credentials !== "object" ||
-    Array.isArray(credentials)
-  ) {
-    throw new EmailConfigurationError("Invalid OAuth client JSON structure.");
-  }
-  const values = credentials as Secret;
-  return {
-    clientId: requiredString(values.client_id, "client_id"),
-    clientSecret: requiredString(values.client_secret, "client_secret"),
-  };
-}
-
 function createEmailConfiguration() {
-  const credentials = getGoogleOAuthCredentials();
   const account = readSecret("gmail-account.json");
   const sender = requiredString(account.user, "gmail-account.json: user");
   const client = nodemailer.createTransport({
@@ -64,10 +47,11 @@ function createEmailConfiguration() {
     greetingTimeout: 15000,
     socketTimeout: 30000,
     auth: {
-      type: "OAuth2",
       user: sender,
-      ...credentials,
-      refreshToken: requiredString(account.refresh_token, "refresh_token"),
+      pass: requiredString(account.app_password, "app_password").replace(
+        /\s/g,
+        "",
+      ),
     },
   });
   return { client, sender };
