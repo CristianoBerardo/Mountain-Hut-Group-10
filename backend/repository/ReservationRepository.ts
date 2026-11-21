@@ -7,11 +7,13 @@ import { throwRepositoryError } from "./utils/repositoryErrors";
 
 type TableRow = {
   dining_table_id: string;
+  table_number: number;
   free: number;
 };
 
 type Assignment = {
   dining_table_id: string;
+  table_number: number;
   seats_assigned: number;
 };
 
@@ -27,6 +29,7 @@ function assignTables(tables: TableRow[], partySize: number): Assignment[] {
   if (singleTable) {
     assignments.push({
       dining_table_id: singleTable.dining_table_id,
+      table_number: singleTable.table_number,
       seats_assigned: partySize,
     });
   } else {
@@ -38,6 +41,7 @@ function assignTables(tables: TableRow[], partySize: number): Assignment[] {
       if (take > 0) {
         assignments.push({
           dining_table_id: t.dining_table_id,
+          table_number: t.table_number,
           seats_assigned: take,
         });
         remaining -= take;
@@ -84,6 +88,7 @@ export class ReservationRepository {
            json_agg(
              json_build_object(
                'dining_table_id', rt.dining_table_id,
+               'table_number',    dt.table_number,
                'seats_assigned',  rt.seats_assigned
              )
            ) FILTER (WHERE rt.dining_table_id IS NOT NULL),
@@ -91,6 +96,7 @@ export class ReservationRepository {
          ) AS tables
        FROM meal_reservation mr
        LEFT JOIN reservation_table rt ON rt.reservation_id = mr.id
+       LEFT JOIN dining_table dt ON dt.id = rt.dining_table_id
        WHERE mr.id = $1
        GROUP BY mr.id`,
         [id],
@@ -135,6 +141,7 @@ export class ReservationRepository {
         throw new NotFoundError("Slot not found");
       }
       const slot = slotResult.rows[0];
+
       //  2-hour rule
       if (!isTwoHoursAhead(slot.date, slot.starts_at)) {
         throw new InvalidRequestError(
@@ -162,12 +169,14 @@ export class ReservationRepository {
       // Uses dt.capacity (seats_in_slot was removed from slot_table schema)
       const tableResult = await client.query<{
         dining_table_id: string;
+        table_number: number;
         capacity: number;
         booked: number;
         free: number;
       }>(
         `SELECT
          st.dining_table_id,
+         dt.table_number,
          dt.capacity,
          COALESCE(SUM(rt.seats_assigned), 0)              AS booked,
          dt.capacity - COALESCE(SUM(rt.seats_assigned), 0) AS free
@@ -181,7 +190,7 @@ export class ReservationRepository {
              )
        WHERE st.slot_id = $1
          AND dt.is_active = TRUE
-       GROUP BY st.dining_table_id, dt.capacity
+       GROUP BY st.dining_table_id, dt.table_number, dt.capacity
        ORDER BY free DESC`,
         [slot_id],
       );
@@ -220,6 +229,7 @@ export class ReservationRepository {
       }
       await client.query("COMMIT");
       transactionStarted = false;
+
       return { reservation, tables: assignments };
     } catch (error) {
       if (client && transactionStarted) {
@@ -279,12 +289,14 @@ export class ReservationRepository {
       );
       const tableResult = await client.query<{
         dining_table_id: string;
+        table_number: number;
         capacity: number;
         booked: number;
         free: number;
       }>(
         `SELECT
          st.dining_table_id,
+         dt.table_number,
          dt.capacity,
          COALESCE(SUM(rt.seats_assigned), 0)              AS booked,
          dt.capacity - COALESCE(SUM(rt.seats_assigned), 0) AS free
@@ -300,7 +312,7 @@ export class ReservationRepository {
              )
        WHERE st.slot_id = $1
          AND dt.is_active = TRUE
-       GROUP BY st.dining_table_id, dt.capacity
+       GROUP BY st.dining_table_id, dt.table_number, dt.capacity
        ORDER BY free DESC`,
         [existing.slot_id, id],
       );

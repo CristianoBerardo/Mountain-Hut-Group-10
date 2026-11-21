@@ -1,5 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import { ReservationRepository } from "../repository/ReservationRepository";
+import { UserRepository } from "../repository/UserRepository";
+import { sendReservationConfirmation } from "../services/emailService";
+import { UserRole } from "../types/UserRole";
 import {
   positiveInteger,
   requestObject,
@@ -8,9 +11,11 @@ import {
 
 export class ReservationController {
   private readonly reservationRepository: ReservationRepository;
+  private readonly userRepository: UserRepository;
 
   constructor() {
     this.reservationRepository = new ReservationRepository();
+    this.userRepository = new UserRepository();
   }
 
   /** Validate the HTTP request and delegate to the repository. */
@@ -58,9 +63,42 @@ export class ReservationController {
         party_size: positiveInteger(body.party_size, "party_size"),
       };
       const result = await this.reservationRepository.createReservation(input);
+
+      try {
+        const hiker = await this.userRepository.getUserById({
+          id: input.hiker_id,
+        });
+        if (hiker.role === UserRole.HIKER) {
+          await sendReservationConfirmation(hiker.email, {
+            hikerName: hiker.name,
+            hikerSurname: hiker.surname,
+            reservationId: result.reservation.id,
+            date: new Date(result.reservation.starts_at)
+              .toISOString()
+              .slice(0, 10),
+            startsAt: new Date(result.reservation.starts_at).toLocaleTimeString(
+              "it-IT",
+              { hour: "2-digit", minute: "2-digit", timeZone: "UTC" },
+            ),
+            endsAt: new Date(result.reservation.ends_at).toLocaleTimeString(
+              "it-IT",
+              { hour: "2-digit", minute: "2-digit", timeZone: "UTC" },
+            ),
+            partySize: result.reservation.party_size,
+            tables: result.tables.map((t) => ({
+              tableNumber: t.table_number,
+              seatsAssigned: t.seats_assigned,
+            })),
+          });
+        }
+      } catch (emailError) {
+        console.error(
+          "Reservation created, but failed to send email:",
+          emailError,
+        );
+      }
       res.status(201).json(result);
     } catch (error) {
-      // Preserve typed errors for the shared HTTP error handler.
       next(error);
     }
   }

@@ -1,4 +1,5 @@
 import { assignTablesToParty } from "../utils/tableAssignment";
+import { InsufficientCapacityError } from "../errors/AppError";
 import { TableAvailability } from "../types/reservationTypes";
 
 const tables: TableAvailability[] = [
@@ -86,7 +87,7 @@ describe("assignTablesToParty", () => {
 
   it("throws when the available seats are insufficient", () => {
     expect(() => assignTablesToParty(13, tables)).toThrow(
-      "INSUFFICIENT_CAPACITY",
+      InsufficientCapacityError,
     );
   });
 
@@ -104,7 +105,7 @@ describe("assignTablesToParty", () => {
     const fullTables = tables.map((table) => ({ ...table, freeSeats: 0 }));
 
     expect(() => assignTablesToParty(1, fullTables)).toThrow(
-      "INSUFFICIENT_CAPACITY",
+      InsufficientCapacityError,
     );
   });
 });

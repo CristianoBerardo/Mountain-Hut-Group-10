@@ -19,3 +19,5 @@ services:
       # GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/firebase.json
     volumes:
       - ./backend/secrets/mountain-hut-group-10-firebase.json:/app/backend/secrets/mountain-hut-group-10-firebase.json:ro
+      - ./backend/secrets/gmail-account.json:/app/backend/secrets/gmail-account.json:ro
+      - ./backend/secrets/mountain-hut-group-10.apps.googleusercontent.com.json:/app/backend/secrets/mountain-hut-group-10.apps.googleusercontent.com.json:ro

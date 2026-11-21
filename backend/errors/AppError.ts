@@ -21,6 +21,12 @@ export class InternalServerError extends AppError {
   }
 }
 
+export class EmailConfigurationError extends AppError {
+  constructor(description: string = "Email configuration error") {
+    super(500, "EMAIL_CONFIGURATION_ERROR", description);
+  }
+}
+
 export class TokenMissingOrInvalidError extends AppError {
   constructor() {
     super(
@@ -50,5 +56,15 @@ export class InvalidRequestError extends AppError {
 export class ConflictError extends AppError {
   constructor(description: string = "Conflict") {
     super(409, "CONFLICT", description);
+  }
+}
+
+export class InsufficientCapacityError extends AppError {
+  constructor() {
+    super(
+      409,
+      "INSUFFICIENT_CAPACITY",
+      "Not enough seats available for the selected time window.",
+    );
   }
 }

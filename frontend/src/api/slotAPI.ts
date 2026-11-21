@@ -1,5 +1,7 @@
 import type {
     AvailableSlotDTO,
+    CheckAvailabilityRequestDTO,
+    CheckAvailabilityResponseDTO,
     CreateMealSlotDTO,
     MealSlotDTO,
     MealSlotDetailsDTO,
@@ -21,6 +23,20 @@ export async function getAvailableSlots(): Promise<AvailableSlotDTO[]> {
         if (err instanceof ApiError && err.status === 404) return [];
         throw err;
     }
+}
+
+export function checkTableAvailability(
+    request: CheckAvailabilityRequestDTO,
+): Promise<CheckAvailabilityResponseDTO> {
+    const query = new URLSearchParams({
+        date: request.date,
+        time: request.time,
+        party_size: String(request.party_size),
+    });
+
+    return requestJSON<CheckAvailabilityResponseDTO>(
+        `/slots/availability?${query.toString()}`,
+    );
 }
 
 export function getSlotDetails(slotId: string): Promise<MealSlotDetailsDTO> {

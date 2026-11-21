@@ -741,6 +741,129 @@
         ]
       }
     },
+    "/api/v1/slots/availability": {
+      "get": {
+        "tags": [
+          "Slots"
+        ],
+        "security": [],
+        "summary": "Check table availability for a date, time and party size",
+        "operationId": "checkAvailability",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "description": "Meal date in YYYY-MM-DD format",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "time",
+            "in": "query",
+            "required": true,
+            "description": "Meal start time in HH:mm format",
+            "schema": {
+              "type": "string",
+              "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+            }
+          },
+          {
+            "name": "party_size",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Availability result with a seating plan when available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "slot_id",
+                    "available_times",
+                    "date",
+                    "time",
+                    "party_size",
+                    "available",
+                    "available_seats",
+                    "tables"
+                  ],
+                  "properties": {
+                    "slot_id": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "available_times": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                      }
+                    },
+                    "date": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "time": {
+                      "type": "string",
+                      "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                    },
+                    "party_size": {
+                      "type": "integer"
+                    },
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "available_seats": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "tables": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "table_id",
+                          "table_number",
+                          "seats_assigned"
+                        ],
+                        "properties": {
+                          "table_id": {
+                            "type": "string"
+                          },
+                          "table_number": {
+                            "type": "integer"
+                          },
+                          "seats_assigned": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid date, time or party size"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/api/v1/slots/available": {
       "get": {
         "tags": [

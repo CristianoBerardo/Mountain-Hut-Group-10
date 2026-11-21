@@ -1,9 +1,19 @@
-import { Trash2, X } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { addTableToSlot, deleteSlot, removeTableFromSlot } from "../../api/slotAPI";
 import type { MealSlotDetailsDTO } from "../../dto/SlotDTO";
 import type { DiningTableDTO } from "../../dto/TableDTO";
 import { formatDate, formatTime, toDateKey } from "../../utils/slotFormat";
+import NewTableDialog from "./NewTableDialog";
+
+async function getOperationError(action: () => Promise<unknown>): Promise<string | null> {
+    try {
+        await action();
+        return null;
+    } catch (err) {
+        return err instanceof Error ? err.message : "Operation failed";
+    }
+}
 
 interface SlotDetailsProps {
     details: MealSlotDetailsDTO;
@@ -20,6 +30,7 @@ function SlotDetails({ details, tables, onChanged, onDeleted }: SlotDetailsProps
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
     const [confirmDelete, setConfirmDelete] = useState(false);
+    const [createTableOpen, setCreateTableOpen] = useState(false);
 
     const assignedIds = new Set(slotTables.map((t) => t.id));
     const addable = tables
@@ -34,6 +45,30 @@ function SlotDetails({ details, tables, onChanged, onDeleted }: SlotDetailsProps
             await onChanged();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Operation failed");
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function handleTableCreated(table: DiningTableDTO) {
+        setBusy(true);
+        setError("");
+
+        try {
+            const assignmentError = await getOperationError(() =>
+                addTableToSlot(slot.id, table.id),
+            );
+            const refreshError = await getOperationError(onChanged);
+
+            if (refreshError) {
+                setError(
+                    assignmentError
+                        ? `Table created, but could not be added to this slot: ${assignmentError}. Refresh also failed: ${refreshError}`
+                        : `Table created and added, but the slot could not be refreshed: ${refreshError}`,
+                );
+            } else if (assignmentError) {
+                setError(`Table created, but could not be added to this slot: ${assignmentError}`);
+            }
         } finally {
             setBusy(false);
         }
@@ -173,6 +208,14 @@ function SlotDetails({ details, tables, onChanged, onDeleted }: SlotDetailsProps
                 >
                     Add
                 </button>
+                <button
+                    type="button"
+                    className="slots-btn ghost small"
+                    disabled={busy}
+                    onClick={() => setCreateTableOpen(true)}
+                >
+                    <Plus size={15} /> New table
+                </button>
             </div>
 
             {error && (
@@ -180,6 +223,16 @@ function SlotDetails({ details, tables, onChanged, onDeleted }: SlotDetailsProps
                     {error}
                 </p>
             )}
+
+            <NewTableDialog
+                open={createTableOpen}
+                tables={tables}
+                onClose={() => setCreateTableOpen(false)}
+                onCreated={(table) => {
+                    setCreateTableOpen(false);
+                    void handleTableCreated(table);
+                }}
+            />
         </section>
     );
 }

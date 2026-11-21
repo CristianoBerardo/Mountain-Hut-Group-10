@@ -1,0 +1,75 @@
+.book-table-page {
+  --accent: #315440;
+  --accent-bg: #edf1e8;
+  --accent-border: #a9bea7;
+  --background: #fff;
+  --border: #e8e9df;
+  --text: #6b756d;
+  --text-h: #253c31;
+
+  flex: 1;
+  min-height: 100vh;
+  color: #23332c;
+  background: #f7f6f1;
+}
+
+.book-table-page .client-booking {
+  min-height: calc(100vh - 68px);
+  background: #f7f6f1;
+}
+
+.book-table-page .client-card {
+  background: #fff;
+  border-color: #e8e9df;
+  border-radius: 8px;
+  box-shadow: 0 16px 42px rgba(35, 51, 44, 0.09);
+}
+
+.book-table-page .client-card h1 {
+  color: #253c31;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+}
+
+.book-table-page .client-field > span {
+  color: #344a3d;
+}
+
+.book-table-page .client-field select,
+.book-table-page .client-field input {
+  border-color: #d9e0d6;
+  border-radius: 5px;
+}
+
+.book-table-page .client-field select:focus,
+.book-table-page .client-field input:focus {
+  border-color: #718b69;
+  box-shadow: 0 0 0 3px rgba(113, 139, 105, 0.14);
+}
+
+.book-table-page .client-button {
+  border-radius: 5px;
+}
+
+.book-table-page .client-button:focus-visible,
+.book-table-page .calendar-nav:focus-visible {
+  outline: 3px solid #718b69;
+  outline-offset: 3px;
+}
+
+.book-table-page .calendar {
+  border-color: #d9e0d6;
+}
+
+.book-table-page .calendar-nav {
+  border-color: #d9e0d6;
+}
+
+.book-table-page .calendar-nav:hover:not(:disabled) {
+  border-color: #718b69;
+  background: #edf1e8;
+}
+
+.book-table-page .calendar-day:hover:not(:disabled) {
+  border-color: #718b69;
+}
