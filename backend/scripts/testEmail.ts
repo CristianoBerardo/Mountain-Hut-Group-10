@@ -22,7 +22,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  // Never print the complete OAuth error object, which can contain credentials.
+  // Never print the complete error object, which can contain credentials.
   const message =
     error instanceof Error ? error.message : "Unknown email error";
   console.error(`Email test failed: ${message}`);

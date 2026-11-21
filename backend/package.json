@@ -8,8 +8,7 @@
     "start": "node dist/app.js",
     "format": "prettier --write ./**/*ts",
     "test": "jest --setupFiles dotenv/config",
-    "email:test": "ts-node scripts/testEmail.ts",
-    "email:authorize": "ts-node scripts/authorizeEmail.ts"
+    "email:test": "ts-node scripts/testEmail.ts"
   },
   "keywords": [],
   "author": "",
