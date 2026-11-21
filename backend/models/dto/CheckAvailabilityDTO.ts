@@ -5,7 +5,7 @@ export interface CheckAvailabilityTableDTO {
 }
 
 export interface CheckAvailabilityResponseDTO {
-  slot_id: string | null;
+  meal_slot_id: string | null;
   available_times: string[];
   date: string;
   time: string;

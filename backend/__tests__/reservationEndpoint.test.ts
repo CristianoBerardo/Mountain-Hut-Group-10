@@ -45,23 +45,31 @@ const tableId = "bbbbbbbb-0001-0001-0001-000000000001";
 const futureDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
   .toISOString()
   .slice(0, 10);
-const reservation = {
+// Columns returned by meal_reservation itself, without the slot's timestamps.
+const reservationRow = {
   id: "cccccccc-0001-0001-0001-000000000001",
   hiker_id: hikerId,
-  slot_id: slotId,
+  meal_slot_id: slotId,
   party_size: 3,
+  status: "CONFIRMED",
+};
+
+const slotTimes = {
+  meal_slot_date: futureDate,
+  meal_slot_starts_at: "18:00:00",
+  meal_slot_ends_at: "19:00:00",
+};
+
+const reservation = {
+  ...reservationRow,
   starts_at: `${futureDate}T18:00:00.000Z`,
   ends_at: `${futureDate}T19:00:00.000Z`,
-  status: "CONFIRMED",
 };
 
 const validRequest = {
   hiker_id: hikerId,
-  starts_at: reservation.starts_at,
-  ends_at: reservation.ends_at,
-  slot_id: slotId,
+  meal_slot_id: slotId,
   party_size: reservation.party_size,
-  status: reservation.status,
 };
 
 function configureAvailableSlotAndTables(
@@ -73,6 +81,17 @@ function configureAvailableSlotAndTables(
     free: number;
   }>,
 ) {
+  poolQuery.mockResolvedValue({
+    rows: [{
+      id: hikerId,
+      firebase_uid: "test-uid",
+      name: "Mario",
+      surname: "Rossi",
+      email: "mario@example.com",
+      role: "HIKER",
+      mobile_number: "+391234567890",
+    }],
+  } as never);
   clientQuery.mockImplementation(async (sql: string) => {
     if (sql.includes("FROM meal_slot")) {
       return {
@@ -87,7 +106,7 @@ function configureAvailableSlotAndTables(
       };
     }
 
-    if (sql.includes("WHERE hiker_id = $1 AND slot_id = $2")) {
+    if (sql.includes("WHERE hiker_id = $1 AND meal_slot_id = $2")) {
       return { rows: [] };
     }
 
@@ -96,7 +115,7 @@ function configureAvailableSlotAndTables(
     }
 
     if (sql.includes("INSERT INTO meal_reservation")) {
-      return { rows: [reservation] };
+      return { rows: [reservationRow] };
     }
 
     if (sql.includes('FROM "user"')) {
@@ -131,6 +150,12 @@ describe("POST /api/v1/reservations", () => {
       tables: [{ dining_table_id: tableId, seats_assigned: 3, table_number: 1 }],
     });
     expect(clientQuery).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /INSERT INTO meal_reservation\s+\(hiker_id, meal_slot_id, party_size, status, created_at\)/,
+      ),
+      [hikerId, slotId, reservation.party_size],
+    );
+    expect(clientQuery).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO reservation_table"),
       [reservation.id, tableId, 3],
     );
@@ -140,7 +165,7 @@ describe("POST /api/v1/reservations", () => {
 
   it.each([
     [{ ...validRequest, hiker_id: undefined }, "hiker_id is required"],
-    [{ ...validRequest, slot_id: undefined }, "slot_id is required"],
+    [{ ...validRequest, meal_slot_id: undefined }, "meal_slot_id is required"],
     [{ ...validRequest, party_size: 0 }, "party_size must be a positive integer"],
   ])("rejects an invalid booking request", async (body, error) => {
     const response = await request(app)
@@ -225,7 +250,7 @@ describe("GET /api/v1/slots/available", () => {
   it("returns available slots and their table availability", async () => {
     const availableSlots = [
       {
-        slot_id: slotId,
+        meal_slot_id: slotId,
         date: futureDate,
         starts_at: "18:00:00",
         ends_at: "19:00:00",
@@ -280,6 +305,71 @@ describe("GET /api/v1/slots/available", () => {
   });
 });
 
+describe("GET /api/v1/reservations", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns timestamps derived from the meal slot", async () => {
+    poolQuery.mockResolvedValueOnce({
+      rows: [{ ...reservationRow, ...slotTimes }],
+    } as never);
+
+    const response = await request(app).get("/api/v1/reservations");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([reservation]);
+  });
+});
+
+describe("PATCH /api/v1/reservations/:id", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    connectSpy.mockImplementation(() =>
+      Promise.resolve(client as unknown as PoolClient),
+    );
+  });
+
+  it("returns slot timestamps when the update returns only reservation columns", async () => {
+    clientQuery.mockImplementation(async (sql: string) => {
+      if (sql.includes("SELECT mr.*")) {
+        return { rows: [{ ...reservationRow, ...slotTimes }] };
+      }
+      if (sql.includes("FROM slot_table st")) {
+        return {
+          rows: [{
+            dining_table_id: tableId,
+            table_number: 1,
+            capacity: 4,
+            booked: 0,
+            free: 4,
+          }],
+        };
+      }
+      if (sql.includes("UPDATE meal_reservation")) {
+        return { rows: [{ ...reservationRow, party_size: 4 }] };
+      }
+      return { rows: [] };
+    });
+
+    const response = await request(app)
+      .patch(`/api/v1/reservations/${reservation.id}`)
+      .send({ party_size: 4 });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      reservation: { ...reservation, party_size: 4 },
+      tables: [{
+        dining_table_id: tableId,
+        table_number: 1,
+        seats_assigned: 4,
+      }],
+    });
+    expect(clientQuery).toHaveBeenCalledWith("COMMIT");
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("GET /api/v1/reservations/:id", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -290,7 +380,13 @@ describe("GET /api/v1/reservations/:id", () => {
       ...reservation,
       tables: [{ dining_table_id: tableId, seats_assigned: 3 }],
     };
-    poolQuery.mockResolvedValueOnce({ rows: [reservationDetails] } as never);
+    poolQuery.mockResolvedValueOnce({
+      rows: [{
+        ...reservationRow,
+        ...slotTimes,
+        tables: reservationDetails.tables,
+      }],
+    } as never);
 
     const response = await request(app).get(
       `/api/v1/reservations/${reservation.id}`,
@@ -342,14 +438,14 @@ describe("POST /api/v1/reservations", () => {
       if (sql.includes("FROM meal_slot")) {
         return Promise.resolve({ rows: [{ id: slotId, date: futureDate, starts_at: "18:00:00", ends_at: "19:00:00" }] });
       }
-      if (sql.includes("WHERE hiker_id = $1 AND slot_id = $2")) {
+      if (sql.includes("WHERE hiker_id = $1 AND meal_slot_id = $2")) {
         return Promise.resolve({ rows: [] });
       }
       if (sql.includes("FROM slot_table st")) {
         return Promise.resolve({ rows: [{ dining_table_id: tableId, table_number: 1, capacity: 4, booked: 0, free: 4 }] });
       }
       if (sql.includes("INSERT INTO meal_reservation")) {
-        return Promise.resolve({ rows: [reservation] });
+        return Promise.resolve({ rows: [reservationRow] });
       }
       return Promise.resolve({ rows: [] });
     });
@@ -364,6 +460,9 @@ describe("POST /api/v1/reservations", () => {
       "mario@example.com",
       expect.objectContaining({
         hikerName: "Mario",
+        date: futureDate,
+        startsAt: "18:00",
+        endsAt: "19:00",
         partySize: 3,
       })
     );
@@ -377,7 +476,7 @@ describe("POST /api/v1/reservations", () => {
     poolQuery.mockImplementation((sql: any) => {
       if (typeof sql === "string" && sql.includes('FROM "user"')) {
         return Promise.resolve({
-          rows: [{ id: hikerId, name: "Mario", surname: "Rossi", email: "mario@example.com", role: "HIKER" }],
+          rows: [{ id: hikerId, firebase_uid: "test-uid", name: "Mario", surname: "Rossi", email: "mario@example.com", role: "HIKER", mobile_number: "+391234567890" }],
         } as never);
       }
       return Promise.resolve({ rows: [] } as never);
@@ -387,14 +486,14 @@ describe("POST /api/v1/reservations", () => {
       if (sql.includes("FROM meal_slot")) {
         return Promise.resolve({ rows: [{ id: slotId, date: futureDate, starts_at: "18:00:00", ends_at: "19:00:00" }] });
       }
-      if (sql.includes("WHERE hiker_id = $1 AND slot_id = $2")) {
+      if (sql.includes("WHERE hiker_id = $1 AND meal_slot_id = $2")) {
         return Promise.resolve({ rows: [] });
       }
       if (sql.includes("FROM slot_table st")) {
         return Promise.resolve({ rows: [{ dining_table_id: tableId, table_number: 1, capacity: 4, booked: 0, free: 4 }] });
       }
       if (sql.includes("INSERT INTO meal_reservation")) {
-        return Promise.resolve({ rows: [reservation] });
+        return Promise.resolve({ rows: [reservationRow] });
       }
       return Promise.resolve({ rows: [] });
     });
@@ -409,5 +508,6 @@ describe("POST /api/v1/reservations", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.reservation).toBeDefined();
+    expect(sendReservationConfirmation).toHaveBeenCalledTimes(1);
   });
 })

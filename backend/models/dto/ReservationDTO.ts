@@ -1,6 +1,6 @@
 // POST /api/v1/reservations  (US1)
 export interface CreateReservationDTO {
-  slot_id: string; // which slot to book
+  meal_slot_id: string; // which slot to book
   party_size: number; // number of people
 }
 
@@ -11,13 +11,13 @@ export interface CreateSlotDTO {
   ends_at: string; // 'HH:MM'
   tables: Array<{
     dining_table_id: string;
-    seats_in_slot: number;
+    seats_in_meal_slot: number;
   }>;
 }
 
 // GET /api/v1/slots response item
 export interface SlotAvailabilityDTO {
-  slot_id: string;
+  meal_slot_id: string;
   date: string;
   starts_at: string;
   ends_at: string;
