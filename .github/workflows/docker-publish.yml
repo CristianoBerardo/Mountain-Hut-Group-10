@@ -90,7 +90,9 @@ jobs:
             }
 
             resolveVersion().then(version => {
-              fs.appendFileSync(process.env.GITHUB_OUTPUT, \`version=\${version}\n\`);
+              if (process.env.GITHUB_OUTPUT) {
+                fs.appendFileSync(process.env.GITHUB_OUTPUT, \`version=\${version}\n\`);
+              }
               console.log(\`Final selected version: \${version}\`);
             });
           "
