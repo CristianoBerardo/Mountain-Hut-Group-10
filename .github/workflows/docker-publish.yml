@@ -108,13 +108,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       # 4. Configure secret files (needed if Vite reads VITE_* vars from .env at build-time)
-      - name: Setup Secrets
-        run: |
-          echo "${{ secrets.ENV_FILE }}" > .env
-          mkdir -p backend/secrets
-          echo "${{ secrets.FIREBASE_SECRET }}" > backend/secrets/mountain-hut-group-10-firebase.json
-          echo "${{ secrets.GOOGLE_ACCOUNT_SECRET }}" > backend/secrets/gmail-account.json
-          echo "${{ secrets.GOOGLEUSERCONTENT_SECRET }}" > backend/secrets/mountain-hut-group-10.apps.googleusercontent.com.json
+      #- name: Setup Secrets
+      #  run: |
+      #    echo "${{ secrets.ENV_FILE }}" > .env
+      #    mkdir -p backend/secrets
+      #    echo "${{ secrets.FIREBASE_SECRET }}" > backend/secrets/mountain-hut-group-10-firebase.json
+      #    echo "${{ secrets.GOOGLE_ACCOUNT_SECRET }}" > backend/secrets/gmail-account.json
+      #    echo "${{ secrets.GOOGLEUSERCONTENT_SECRET }}" > backend/secrets/mountain-hut-group-10.apps.googleusercontent.com.json
 
       # 5. Build & Push unified image
       - name: Build and push Mountain Hut image
