@@ -4,9 +4,11 @@ import { UserRepository } from "../repository/UserRepository";
 import { sendReservationConfirmation } from "../services/emailService";
 import { UserRole } from "../types/UserRole";
 import {
+  optionalString,
   positiveInteger,
   requestObject,
   requiredString,
+  reservationAllergens,
 } from "../utils/requestValidation";
 
 export class ReservationController {
@@ -57,10 +59,13 @@ export class ReservationController {
   ): Promise<void> {
     try {
       const body = requestObject(req.body);
+      const partySize = positiveInteger(body.party_size, "party_size");
       const input = {
         hiker_id: requiredString(body.hiker_id, "hiker_id"),
-        slot_id: requiredString(body.slot_id, "slot_id"),
-        party_size: positiveInteger(body.party_size, "party_size"),
+        meal_slot_id: requiredString(body.meal_slot_id, "meal_slot_id"),
+        party_size: partySize,
+        allergens: reservationAllergens(body.allergens, partySize),
+        preferences: optionalString(body.preferences, "preferences"),
       };
       const result = await this.reservationRepository.createReservation(input);
 
@@ -113,10 +118,11 @@ export class ReservationController {
       const id = requiredString(req.params.id, "id");
       const body = requestObject(req.body);
       const partySize = positiveInteger(body.party_size, "party_size");
-      const result = await this.reservationRepository.updateReservation(
-        id,
-        partySize,
-      );
+      const result = await this.reservationRepository.updateReservation(id, {
+        party_size: partySize,
+        allergens: reservationAllergens(body.allergens, partySize),
+        preferences: optionalString(body.preferences, "preferences"),
+      });
       res.status(200).json(result);
     } catch (error) {
       // Preserve typed errors for the shared HTTP error handler.

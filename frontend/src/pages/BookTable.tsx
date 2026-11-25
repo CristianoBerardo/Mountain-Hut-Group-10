@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createReservation } from "../api/reservationAPI";
 import { getAvailableSlots } from "../api/slotAPI";
@@ -50,8 +50,21 @@ function BookTable() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [confirmation, setConfirmation] = useState<{
+    slot: AvailableSlotDTO;
+    partySize: number;
+  } | null>(null);
+  const confirmationDialogRef = useRef<HTMLDialogElement>(null);
 
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    const dialog = confirmationDialogRef.current;
+    if (!dialog) return;
+
+    if (confirmation && !dialog.open) dialog.showModal();
+    if (!confirmation && dialog.open) dialog.close();
+  }, [confirmation]);
 
   useEffect(() => {
     let active = true;
@@ -74,7 +87,7 @@ function BookTable() {
             const pending = JSON.parse(saved);
 
             if (
-              typeof pending?.slot_id !== "string" ||
+              typeof pending?.meal_slot_id !== "string" ||
               !Number.isSafeInteger(pending?.party_size) ||
               pending.party_size <= 0 ||
               !Number.isFinite(pending?.expires_at) ||
@@ -85,7 +98,7 @@ function BookTable() {
             }
 
             const selectedSlot = result.find(
-              (slot) => slot.slot_id === pending.slot_id,
+              (slot) => slot.meal_slot_id === pending.meal_slot_id,
             );
 
             if (
@@ -98,7 +111,7 @@ function BookTable() {
             }
 
             setDay(selectedSlot.date);
-            setSlotId(selectedSlot.slot_id);
+            setSlotId(selectedSlot.meal_slot_id);
             setPartySize(String(pending.party_size));
           } catch {
             setError("Could not restore your saved selection.");
@@ -130,7 +143,7 @@ function BookTable() {
   );
   const days = [...new Set(bookableSlots.map((s) => s.date))];
   const daySlots = slots.filter((s) => s.date === day);
-  const slot = slots.find((s) => s.slot_id === slotId);
+  const slot = slots.find((s) => s.meal_slot_id === slotId);
 
   const size = Number(partySize);
   const validSize = Number.isInteger(size) && size > 0;
@@ -201,19 +214,36 @@ function BookTable() {
       return;
     }
 
+    setConfirmation({ slot, partySize: size });
+  }
+
+  async function confirmBooking() {
+    if (!confirmation || submitting) return;
+
+    const hikerId = sessionStorage.getItem("user_id");
+    if (!hikerId) {
+      setConfirmation(null);
+      setError(
+        "Your session is missing your account details. Please log out and log in again.",
+      );
+      return;
+    }
+
     setSubmitting(true);
+    setError("");
 
     try {
       const result = await createReservation({
         hiker_id: hikerId,
-        slot_id: slot.slot_id,
-        party_size: size,
+        meal_slot_id: confirmation.slot.meal_slot_id,
+        party_size: confirmation.partySize,
       });
 
       sessionStorage.removeItem("tableAvailabilitySearch");
-
-      setBooking({ slot, partySize: size, tables: result.tables });
+      setBooking({ ...confirmation, tables: result.tables });
+      setConfirmation(null);
     } catch (err) {
+      setConfirmation(null);
       setError(serverMessage(err));
     } finally {
       setSubmitting(false);
@@ -226,7 +256,7 @@ function BookTable() {
       <Navbar />
       <main className="client-booking">
         {booking ? (
-          <section className="client-card" aria-live="polite">
+          <section className="client-card client-card-confirmed" aria-live="polite">
             <h1>Your table is booked</h1>
             <p className="client-lead">
               We look forward to seeing you at the hut.
@@ -278,99 +308,153 @@ function BookTable() {
               </p>
             )}
 
-            <div className="client-field">
-              <span>Date</span>
-              <BookingCalendar
-                availableDays={days}
-                selected={day}
-                onSelect={chooseDay}
-              />
-              <small className="client-hint">
-                {loading
-                  ? "Loading available dates…"
-                  : day
-                    ? formatDay(day)
-                    : "Choose one of the highlighted dates."}
-              </small>
-            </div>
+            <div className="booking-grid">
+              <div className="booking-calendar-col">
+                <div className="client-field">
+                  <span>Date</span>
+                  <BookingCalendar
+                    availableDays={days}
+                    selected={day}
+                    onSelect={chooseDay}
+                  />
+                  <small className="client-hint">
+                    {loading
+                      ? "Loading available dates…"
+                      : day
+                        ? formatDay(day)
+                        : "Choose one of the highlighted dates."}
+                  </small>
+                </div>
+              </div>
 
-            <label className="client-field">
-              <span>Time</span>
-              <select
-                value={slotId}
-                onChange={(e) => {
-                  setSlotId(e.target.value);
-                  setError("");
-                }}
-                disabled={!day}
-                required
-              >
-                <option value="">
-                  {day ? "Choose a time" : "Choose a date first"}
-                </option>
-                {daySlots.map((s) => {
-                  const reason = unavailableReason(s);
-
-                  return (
-                    <option
-                      key={s.slot_id}
-                      value={s.slot_id}
-                      disabled={reason !== null}
-                    >
-                      {formatTimeRange(s)}
-                      {reason ? ` (${reason})` : ""}
+              <div className="booking-details-col">
+                <label className="client-field">
+                  <span>Time</span>
+                  <select
+                    value={slotId}
+                    onChange={(e) => {
+                      setSlotId(e.target.value);
+                      setError("");
+                    }}
+                    disabled={!day}
+                    required
+                  >
+                    <option value="">
+                      {day ? "Choose a time" : "Choose a date first"}
                     </option>
-                  );
-                })}
-              </select>
-            </label>
+                    {daySlots.map((s) => {
+                      const reason = unavailableReason(s);
 
-            <label className="client-field">
-              <span>Number of people</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={slot?.available_seats}
-                placeholder="e.g. 4"
-                value={partySize}
-                onChange={(e) => {
-                  setPartySize(e.target.value);
-                  setError("");
-                }}
-                required
-              />
-              {slot && (
-                <small
-                  className={tooMany ? "client-hint warning" : "client-hint"}
+                      return (
+                        <option
+                          key={s.meal_slot_id}
+                          value={s.meal_slot_id}
+                          disabled={reason !== null}
+                        >
+                          {formatTimeRange(s)}
+                          {reason ? ` (${reason})` : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </label>
+
+                <label className="client-field">
+                  <span>Number of people</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={slot?.available_seats}
+                    placeholder="e.g. 4"
+                    value={partySize}
+                    onChange={(e) => {
+                      setPartySize(e.target.value);
+                      setError("");
+                    }}
+                    required
+                  />
+                  {slot && (
+                    <small
+                      className={tooMany ? "client-hint warning" : "client-hint"}
+                    >
+                      {slot.available_seats} seats free at this time.
+                    </small>
+                  )}
+                </label>
+
+                {error && (
+                  <p className="client-error" role="alert">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="client-button"
+                  disabled={submitting || loading || !!loadError || tooMany}
                 >
-                  {slot.available_seats} seats free at this time.
-                </small>
-              )}
-            </label>
+                  {submitting ? "Booking…" : "Book table"}
+                </button>
 
-            {error && (
-              <p className="client-error" role="alert">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              className="client-button"
-              disabled={submitting || loading || !!loadError || tooMany}
-            >
-              {submitting ? "Booking…" : "Book table"}
-            </button>
-
-            <p className="client-note">
-              Bookings close {BOOKING_NOTICE_HOURS} hours before the meal.
-              Tables are shared with other guests; we keep your party together
-              whenever possible.
-            </p>
+                <p className="client-note">
+                  Bookings close {BOOKING_NOTICE_HOURS} hours before the meal.
+                  Tables are shared with other guests; we keep your party together
+                  whenever possible.
+                </p>
+              </div>
+            </div>
           </form>
         )}
       </main>
+      <dialog
+        ref={confirmationDialogRef}
+        className="client-confirm-dialog"
+        aria-labelledby="booking-confirmation-title"
+        aria-describedby="booking-confirmation-message"
+        onClose={() => setConfirmation(null)}
+        onCancel={(event) => {
+          if (submitting) event.preventDefault();
+        }}
+        onClick={(event) => {
+          if (event.target === event.currentTarget && !submitting) {
+            setConfirmation(null);
+          }
+        }}
+      >
+        {confirmation && (
+          <div className="client-confirm-content">
+            <h2 id="booking-confirmation-title">Confirm your booking</h2>
+            <p id="booking-confirmation-message">
+              {people(confirmation.partySize)}
+            </p>
+            <p>
+              {formatDay(confirmation.slot.date)}
+            </p>
+            <p>
+              {formatTimeRange(confirmation.slot)}
+            </p>
+            <div className="client-confirm-actions">
+              <button
+                type="button"
+                className="client-confirm-cancel"
+                onClick={() => setConfirmation(null)}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="client-button"
+                onClick={confirmBooking}
+                disabled={submitting}
+              >
+                {submitting ? "Booking…" : "Confirm booking"}
+              </button>
+            </div>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }

@@ -2,6 +2,7 @@ version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "staging"
     schedule:
       interval: "weekly"
 
@@ -10,5 +11,9 @@ updates:
       - "/"
       - "/backend"
       - "/frontend"
+    target-branch: "staging"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]

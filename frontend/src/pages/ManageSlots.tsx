@@ -20,7 +20,7 @@ async function fetchOverview() {
     ]);
     const capacities: Record<string, SlotCapacity> = Object.fromEntries(
         capacityRows.map((c) => [
-            c.slot_id,
+            c.meal_slot_id,
             { tables: c.active_tables_count, seats: c.total_capacity, booked: c.total_booked },
         ]),
     );

@@ -104,7 +104,7 @@ export async function createReservation(
         const reservation = resResult.rows[0];
 
         const insertAssignmentQuery = `
-      INSERT INTO reservation_table (reservation_id, dining_table_id, seats_assigned)
+      INSERT INTO reservation_table (meal_reservation_id, dining_table_id, seats_assigned)
       VALUES ($1, $2, $3)
     `;
         for (const assignment of tableAssignments) {
