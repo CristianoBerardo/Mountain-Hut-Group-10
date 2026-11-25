@@ -51,6 +51,73 @@
   border-radius: 5px;
 }
 
+.book-table-page .client-confirm-dialog {
+  color-scheme: light;
+  width: min(440px, calc(100vw - 32px));
+  padding: 0;
+  color: #253c31;
+  background: #fff;
+  border: 1px solid #e8e9df;
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(35, 51, 44, 0.18);
+}
+
+.book-table-page .client-confirm-dialog::backdrop {
+  background: rgba(17, 24, 39, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.book-table-page .client-confirm-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.book-table-page .client-confirm-content h2,
+.book-table-page .client-confirm-content p {
+  margin: 0;
+}
+
+.book-table-page .client-confirm-content h2 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.book-table-page .client-confirm-content p {
+  color: #6b756d;
+  line-height: 1.5;
+}
+
+.book-table-page .client-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.book-table-page .client-confirm-actions button {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.book-table-page .client-confirm-actions .client-confirm-cancel {
+  color: #253c31;
+  background: #fff;
+  border: 1px solid #d9e0d6;
+}
+
+.book-table-page .client-confirm-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .book-table-page .client-button:focus-visible,
 .book-table-page .calendar-nav:focus-visible {
   outline: 3px solid #718b69;
