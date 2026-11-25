@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createReservation } from "../api/reservationAPI";
 import { getAvailableSlots } from "../api/slotAPI";
@@ -50,8 +50,21 @@ function BookTable() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [confirmation, setConfirmation] = useState<{
+    slot: AvailableSlotDTO;
+    partySize: number;
+  } | null>(null);
+  const confirmationDialogRef = useRef<HTMLDialogElement>(null);
 
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    const dialog = confirmationDialogRef.current;
+    if (!dialog) return;
+
+    if (confirmation && !dialog.open) dialog.showModal();
+    if (!confirmation && dialog.open) dialog.close();
+  }, [confirmation]);
 
   useEffect(() => {
     let active = true;
@@ -201,19 +214,36 @@ function BookTable() {
       return;
     }
 
+    setConfirmation({ slot, partySize: size });
+  }
+
+  async function confirmBooking() {
+    if (!confirmation || submitting) return;
+
+    const hikerId = sessionStorage.getItem("user_id");
+    if (!hikerId) {
+      setConfirmation(null);
+      setError(
+        "Your session is missing your account details. Please log out and log in again.",
+      );
+      return;
+    }
+
     setSubmitting(true);
+    setError("");
 
     try {
       const result = await createReservation({
         hiker_id: hikerId,
-        slot_id: slot.slot_id,
-        party_size: size,
+        slot_id: confirmation.slot.slot_id,
+        party_size: confirmation.partySize,
       });
 
       sessionStorage.removeItem("tableAvailabilitySearch");
-
-      setBooking({ slot, partySize: size, tables: result.tables });
+      setBooking({ ...confirmation, tables: result.tables });
+      setConfirmation(null);
     } catch (err) {
+      setConfirmation(null);
       setError(serverMessage(err));
     } finally {
       setSubmitting(false);
@@ -371,6 +401,54 @@ function BookTable() {
           </form>
         )}
       </main>
+      <dialog
+        ref={confirmationDialogRef}
+        className="client-confirm-dialog"
+        aria-labelledby="booking-confirmation-title"
+        aria-describedby="booking-confirmation-message"
+        onClose={() => setConfirmation(null)}
+        onCancel={(event) => {
+          if (submitting) event.preventDefault();
+        }}
+        onClick={(event) => {
+          if (event.target === event.currentTarget && !submitting) {
+            setConfirmation(null);
+          }
+        }}
+      >
+        {confirmation && (
+          <div className="client-confirm-content">
+            <h2 id="booking-confirmation-title">Confirm your booking</h2>
+            <p id="booking-confirmation-message">
+              {people(confirmation.partySize)}
+            </p>
+            <p>
+              {formatDay(confirmation.slot.date)}
+            </p>
+            <p>
+              {formatTimeRange(confirmation.slot)}
+            </p>
+            <div className="client-confirm-actions">
+              <button
+                type="button"
+                className="client-confirm-cancel"
+                onClick={() => setConfirmation(null)}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="client-button"
+                onClick={confirmBooking}
+                disabled={submitting}
+              >
+                {submitting ? "Booking…" : "Confirm booking"}
+              </button>
+            </div>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }
