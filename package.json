@@ -19,7 +19,7 @@
     "@types/chai": "^5.2.2",
     "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
-    "@types/supertest": "^6.0.3",
+    "@types/supertest": "^7.2.1",
     "chai": "^5.2.0",
     "@types/node": "^22.15.30",
     "concurrently": "^8.2.2",
