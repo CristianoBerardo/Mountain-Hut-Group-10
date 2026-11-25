@@ -1,14 +1,22 @@
 .availability-form {
   display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  align-items: start;
+}
+
+.availability-form .client-error,
+.availability-form .client-button {
+  grid-column: 1 / -1;
 }
 
 .availability-result {
-  padding: 18px 20px;
+  padding: 24px 28px;
   color: #344a3d;
   background: #edf1e8;
   border: 1px solid #d9e0d6;
   border-radius: 8px;
+  margin-top: 10px;
 }
 
 .availability-result h2,
@@ -33,4 +41,16 @@
   max-width: 100%;
   margin: 20px auto 0;
   padding: 12px 24px;
+}
+
+/* Responsive: impila verticalmente su smartphone */
+@media (max-width: 768px) {
+  .availability-form {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .availability-result {
+    padding: 18px 16px;
+  }
 }

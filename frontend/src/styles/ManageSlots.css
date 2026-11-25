@@ -154,7 +154,7 @@
 }
 
 .slots-btn.primary:hover:not(:disabled) {
-  background: #4f57e8;
+  background: #254532;
 }
 
 .slots-btn.ghost {
@@ -392,7 +392,7 @@
   margin-top: 14px;
 }
 
-.copy-from ~ .table-grid {
+.copy-from~.table-grid {
   margin-top: 0;
 }
 
@@ -479,14 +479,21 @@
 /* Always light: index.css sets `color-scheme: light dark`, which would otherwise
    give the native <dialog> and its inputs dark system colours in dark mode. */
 .slots-dialog {
+  --accent: #315440;
+  --accent-bg: #edf1e8;
+  --accent-border: #a9bea7;
+  --text: #6b756d;
+  --text-h: #253c31;
+
+  font-family: Arial, Helvetica, sans-serif;
   color-scheme: light;
   width: min(420px, calc(100vw - 32px));
   padding: 0;
-  color: #222222;
+  color: #253c31;
   background: #ffffff;
   text-align: left;
   border: none;
-  border-radius: 16px;
+  border-radius: 8px;
   box-shadow:
     0 24px 48px rgba(0, 0, 0, 0.18),
     0 4px 12px rgba(0, 0, 0, 0.08);
@@ -512,11 +519,13 @@
   margin: 0;
   font-size: 20px;
   font-weight: 700;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #253c31;
 }
 
 .slots-dialog-header .icon-btn:hover {
   color: var(--text-h);
-  background: #f3f4f6;
+  background: #edf1e8;
   border-color: transparent;
 }
 
@@ -842,21 +851,13 @@
 
 .manage-slots-page .slots-page input:focus,
 .manage-slots-page .slots-page select:focus,
-.manage-slots-page .slots-dialog-fields input:focus {
+.slots-dialog-fields input:focus {
   outline-color: #718b69;
   border-color: #718b69;
 }
 
-.manage-slots-page .slots-dialog {
-  color: #253c31;
-  border-radius: 8px;
-}
-
-.manage-slots-page .slots-dialog-header h2 {
-  color: #253c31;
-}
-
-.manage-slots-page .slots-dialog-fields input {
+.slots-dialog-fields input {
+  font-family: Arial, Helvetica, sans-serif;
   border-color: #d9e0d6;
   border-radius: 5px;
 }

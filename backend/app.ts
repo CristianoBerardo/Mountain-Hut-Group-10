@@ -13,12 +13,23 @@ import slotRoutes from "./routes/slotRoutes";
 import tableRoutes from "./routes/tableRoutes";
 import userRoutes from "./routes/userRoutes";
 
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : ["http://localhost:5173", "http://localhost:3000"];
+
 // Carica il file .env dalla root del progetto (Single Source of Truth)
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.disable("x-powered-by");
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+  }),
+);
+
 app.use(express.json());
 
 app.use("/api/v1/users", userRoutes);

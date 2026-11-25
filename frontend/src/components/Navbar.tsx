@@ -13,6 +13,7 @@ function Navbar() {
   const isAuthPage =
     location.pathname === "/login" || location.pathname === "/register";
   const isManageSlotsPage = location.pathname === "/slots";
+  const isAvailabilityPage = location.pathname === "/availability";
 
   function handleLogout() {
     // Remove authentication information
@@ -31,6 +32,11 @@ function Navbar() {
         <Link to="/" className="navbar-home-button">
           Home
         </Link>
+        {!isAvailabilityPage && (
+          <Link to="/availability" className="navbar-home-button">
+            Check availability
+          </Link>
+        )}
         {isLoggedIn && canManageSlots(role) && !isManageSlotsPage && (
           <Link to="/slots" className="navbar-home-button">
             Meal slots

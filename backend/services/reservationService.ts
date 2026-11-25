@@ -25,8 +25,11 @@ export async function createReservation(
 
     //Calcolo orari
     const startsAt = new Date(dto.startsAt);
-    if (isNaN(startsAt.getTime())) {
-        throw new ReservationBusinessError(400, "Invalid start date/time format.");
+    if (Number.isNaN(startsAt.getTime())) {
+      throw new ReservationBusinessError(
+        400,
+        "Invalid start date/time format.",
+      );
     }
 
     //default 120 min se non specificato

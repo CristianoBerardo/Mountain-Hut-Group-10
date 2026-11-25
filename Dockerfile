@@ -1,14 +1,14 @@
 FROM node:24-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 COPY frontend/ ./
 RUN npm run build-only
 
 FROM node:24-alpine AS backend-builder
 WORKDIR /app/backend
 COPY backend/package.json backend/package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 COPY backend/ ./
 RUN npm run build
 
@@ -18,7 +18,7 @@ WORKDIR /app/backend
 ENV NODE_ENV=production
 
 COPY backend/package.json backend/package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 COPY --from=backend-builder /app/backend/dist ./dist
 COPY --from=frontend-builder /app/frontend/dist ./public
