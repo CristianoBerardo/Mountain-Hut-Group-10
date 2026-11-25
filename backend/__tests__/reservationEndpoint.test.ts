@@ -4,7 +4,7 @@ import app from "../app";
 import { pool } from "../connections/PostgreSQL/database";
 import { ReservationAllergensDTO } from "../models/dto/ReservationAllergensDTO";
 import { sendReservationConfirmation } from "../services/emailService";
-import { Allergen } from "../types/AllergensType";
+import { AllergenType } from "../types/AllergensType";
 
 jest.mock("../connections/PostgreSQL/database", () => ({
   pool: {
@@ -613,8 +613,8 @@ describe("POST /api/v1/reservations", () => {
 });
 
 const allergenGroups: ReservationAllergensDTO[] = [
-  { people_count: 2, allergens: [Allergen.MILK, Allergen.SULPHITES] },
-  { people_count: 1, allergens: [Allergen.LUPIN, Allergen.MILK] },
+  { people_count: 2, allergens: [AllergenType.MILK, AllergenType.SULPHITES] },
+  { people_count: 1, allergens: [AllergenType.LUPIN, AllergenType.MILK] },
 ];
 
 function configureReservationUpdate({
