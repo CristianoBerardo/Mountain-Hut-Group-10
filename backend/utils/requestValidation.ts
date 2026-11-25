@@ -108,8 +108,12 @@ export function reservationAllergens(
 
       return allergen;
     });
-
-    const normalized = [...new Set(parsedAllergens)].sort();
+    // 1. Delete the duplicates allergens
+    // 2. COnvert the set into an array
+    // 3. Alphabetically order the allergens
+    const normalized = [...new Set(parsedAllergens)].sort((a, b) =>
+      a.localeCompare(b),
+    );
     const combination = JSON.stringify(normalized);
 
     if (combinations.has(combination)) {
