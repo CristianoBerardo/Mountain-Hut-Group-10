@@ -110,13 +110,26 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       # 4. Configure secret files (needed if Vite reads VITE_* vars from .env at build-time)
-      #- name: Setup Secrets
-      #  run: |
-      #    echo "${{ secrets.ENV_FILE }}" > .env
-      #    mkdir -p backend/secrets
-      #    echo "${{ secrets.FIREBASE_SECRET }}" > backend/secrets/mountain-hut-group-10-firebase.json
-      #    echo "${{ secrets.GOOGLE_ACCOUNT_SECRET }}" > backend/secrets/gmail-account.json
-      #    echo "${{ secrets.GOOGLEUSERCONTENT_SECRET }}" > backend/secrets/mountain-hut-group-10.apps.googleusercontent.com.json
+      # - name: Setup Secrets
+      #   env:
+      #     ENV_FILE: ${{ secrets.ENV_FILE }}
+      #     FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
+      #     GOOGLE_ACCOUNT_SECRET: ${{ secrets.GOOGLE_ACCOUNT_SECRET }}
+      #     GOOGLEUSERCONTENT_SECRET: ${{ secrets.GOOGLEUSERCONTENT_SECRET }}
+      #   run: |
+      #     echo "Setting up secret files..."
+      #     echo "$ENV_FILE" > .env
+      #     mkdir -p backend/secrets
+      #     echo "$FIREBASE_SECRET" > backend/secrets/mountain-hut-group-10-firebase.json
+      #     echo "$GOOGLE_ACCOUNT_SECRET" > backend/secrets/gmail-account.json
+      #     echo "$GOOGLEUSERCONTENT_SECRET" > backend/secrets/mountain-hut-group-10.apps.googleusercontent.com.json
+      #   # Legacy approach
+      #   # run: |  
+      #   #  echo "${{ secrets.ENV_FILE }}" > .env
+      #   #  mkdir -p backend/secrets
+      #   #  echo "${{ secrets.FIREBASE_SECRET }}" > backend/secrets/mountain-hut-group-10-firebase.json
+      #   #  echo "${{ secrets.GOOGLE_ACCOUNT_SECRET }}" > backend/secrets/gmail-account.json
+      #   #  echo "${{ secrets.GOOGLEUSERCONTENT_SECRET }}" > backend/secrets/mountain-hut-group-10.apps.googleusercontent.com.json
 
       # 5. Build & Push unified image
       - name: Build and push Mountain Hut image

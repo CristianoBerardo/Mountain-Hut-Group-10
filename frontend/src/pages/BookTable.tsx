@@ -117,7 +117,7 @@ function BookTable() {
       }
     }
 
-    loadSlots();
+    void loadSlots();
 
     return () => {
       active = false;
