@@ -1,8 +1,14 @@
 import { PoolClient } from "pg";
 import { pool } from "../connections/PostgreSQL/database";
 import { InvalidRequestError, NotFoundError } from "../errors/AppError";
+import { MealReservationDTO } from "../models/dto/MealReservationDTO";
+import { ReservationAllergensDTO } from "../models/dto/ReservationAllergensDTO";
 import { CreateReservationDTO } from "../models/dto/ReservationDTO";
-import { MealReservation } from "../models/MealReservation";
+import {
+  optionalString,
+  positiveInteger,
+  reservationAllergens,
+} from "../utils/requestValidation";
 import { throwRepositoryError } from "./utils/repositoryErrors";
 
 type TableRow = {
@@ -10,6 +16,34 @@ type TableRow = {
   table_number: number;
   free: number;
 };
+
+type ReservationRow = Omit<MealReservationDTO, "starts_at" | "ends_at">;
+
+type SlotTimes = {
+  meal_slot_date: string;
+  meal_slot_starts_at: string;
+  meal_slot_ends_at: string;
+};
+
+function toMealReservation(
+  row: ReservationRow & SlotTimes,
+): MealReservationDTO {
+  const {
+    meal_slot_date,
+    meal_slot_starts_at,
+    meal_slot_ends_at,
+    ...reservation
+  } = row;
+
+  // Preserve the UTC convention used by the booking checks and email controller.
+  return {
+    ...reservation,
+    starts_at: new Date(
+      `${meal_slot_date}T${meal_slot_starts_at}Z`,
+    ).toISOString(),
+    ends_at: new Date(`${meal_slot_date}T${meal_slot_ends_at}Z`).toISOString(),
+  };
+}
 
 type Assignment = {
   dining_table_id: string;
@@ -63,15 +97,35 @@ function isTwoHoursAhead(slotDate: string, slotStartsAt: string): boolean {
 
 export class ReservationRepository {
   /** List reservations ordered by their start time. */
-  public async getReservations(): Promise<MealReservation[]> {
+  public async getReservations(): Promise<MealReservationDTO[]> {
     try {
-      const result = await pool.query(
-        `SELECT * FROM meal_reservation ORDER BY starts_at ASC`,
+      const result = await pool.query<ReservationRow & SlotTimes>(
+        `SELECT mr.*,
+                ms.date::text AS meal_slot_date,
+                ms.starts_at::text AS meal_slot_starts_at,
+                ms.ends_at::text AS meal_slot_ends_at,
+          COALESCE(
+              (
+                  SELECT json_agg(
+                      json_build_object(
+                          'people_count', ra.people_count,
+                          'allergens', ra.allergens
+                      )
+                      ORDER BY ra.id
+                  )
+                  FROM meal_reservation_allergens ra
+                  WHERE ra.meal_reservation_id = mr.id
+              ),
+              '[]'::json
+          ) AS allergens
+          FROM meal_reservation mr
+          JOIN meal_slot ms ON ms.id = mr.meal_slot_id
+          ORDER BY ms.date ASC, ms.starts_at ASC`,
       );
       if (result.rows.length === 0) {
         throw new NotFoundError("No reservations found");
       }
-      return result.rows;
+      return result.rows.map(toMealReservation);
     } catch (error) {
       return throwRepositoryError(error, "Unable to retrieve reservations.");
     }
@@ -79,11 +133,19 @@ export class ReservationRepository {
   /** Retrieve a reservation together with its assigned tables. */
   public async getReservationById(
     id: string,
-  ): Promise<MealReservation & { tables: Assignment[] }> {
+  ): Promise<MealReservationDTO & { tables: Assignment[] }> {
     try {
-      const result = await pool.query(
+      // Define the expected shape of each query result row:
+      // reservation data, slot date/time fields, and assigned tables.
+      // This provides TypeScript type checking, not runtime validation.
+      const result = await pool.query<
+        ReservationRow & SlotTimes & { tables: Assignment[] }
+      >(
         `SELECT
          mr.*,
+         ms.date::text AS meal_slot_date,
+         ms.starts_at::text AS meal_slot_starts_at,
+         ms.ends_at::text AS meal_slot_ends_at,
          COALESCE(
            json_agg(
              json_build_object(
@@ -93,29 +155,49 @@ export class ReservationRepository {
              )
            ) FILTER (WHERE rt.dining_table_id IS NOT NULL),
            '[]'
-         ) AS tables
+         ) AS tables,
+         COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'people_count', ra.people_count,
+                'allergens', ra.allergens
+              )
+              ORDER BY ra.id
+            )
+            FROM meal_reservation_allergens ra
+            WHERE ra.meal_reservation_id = mr.id
+          ),
+          '[]'::json
+        ) AS allergens
        FROM meal_reservation mr
-       LEFT JOIN reservation_table rt ON rt.reservation_id = mr.id
+       JOIN meal_slot ms ON ms.id = mr.meal_slot_id
+       LEFT JOIN reservation_table rt ON rt.meal_reservation_id = mr.id
        LEFT JOIN dining_table dt ON dt.id = rt.dining_table_id
        WHERE mr.id = $1
-       GROUP BY mr.id`,
+       GROUP BY mr.id, ms.id`,
         [id],
       );
       if (result.rows.length === 0) {
         throw new NotFoundError("Reservation not found");
       }
-      return result.rows[0];
+      return {
+        ...toMealReservation(result.rows[0]),
+        tables: result.rows[0].tables,
+      };
     } catch (error) {
       return throwRepositoryError(error, "Unable to retrieve the reservation.");
     }
   }
   /** Create a reservation and assign seats within one transaction. */
   public async createReservation({
-    slot_id,
+    meal_slot_id,
     party_size,
     hiker_id,
+    allergens = [],
+    preferences,
   }: CreateReservationDTO & { hiker_id: string }): Promise<{
-    reservation: MealReservation;
+    reservation: MealReservationDTO;
     tables: Assignment[];
   }> {
     let client: PoolClient | undefined;
@@ -123,19 +205,21 @@ export class ReservationRepository {
     if (!hiker_id) {
       throw new InvalidRequestError("hiker_id is required");
     }
-    if (!slot_id) {
-      throw new InvalidRequestError("slot_id is required");
+    if (!meal_slot_id) {
+      throw new InvalidRequestError("meal_slot_id is required");
     }
-    if (!party_size || party_size <= 0) {
-      throw new InvalidRequestError("party_size must be a positive integer");
-    }
+    positiveInteger(party_size, "party_size");
+    optionalString(preferences, "preferences");
+
+    const normalizedAllergens =
+      reservationAllergens(allergens, party_size) ?? [];
     try {
       client = await pool.connect();
       // Fetch slot
       const slotResult = await client.query(
         `SELECT id, date::text AS date, starts_at::text AS starts_at, ends_at::text AS ends_at
        FROM meal_slot WHERE id = $1`,
-        [slot_id],
+        [meal_slot_id],
       );
       if (slotResult.rows.length === 0) {
         throw new NotFoundError("Slot not found");
@@ -151,8 +235,8 @@ export class ReservationRepository {
       // 1-per-slot rule — hiker cannot double-book
       const dupCheck = await client.query(
         `SELECT id FROM meal_reservation
-       WHERE hiker_id = $1 AND slot_id = $2 AND status = 'CONFIRMED'`,
-        [hiker_id, slot_id],
+       WHERE hiker_id = $1 AND meal_slot_id = $2 AND status = 'CONFIRMED'`,
+        [hiker_id, meal_slot_id],
       );
       if (dupCheck.rows.length > 0) {
         throw new InvalidRequestError(
@@ -163,8 +247,8 @@ export class ReservationRepository {
       transactionStarted = true;
       // lock slot_table rows + compute free seats per table to prevent Race cond.
       await client.query(
-        `SELECT dining_table_id FROM slot_table WHERE slot_id = $1 FOR UPDATE`,
-        [slot_id],
+        `SELECT dining_table_id FROM slot_table WHERE meal_slot_id = $1 FOR UPDATE`,
+        [meal_slot_id],
       );
       // Uses dt.capacity (seats_in_slot was removed from slot_table schema)
       const tableResult = await client.query<{
@@ -184,15 +268,15 @@ export class ReservationRepository {
        JOIN dining_table dt ON dt.id = st.dining_table_id
        LEFT JOIN reservation_table rt
               ON rt.dining_table_id = st.dining_table_id
-             AND rt.reservation_id IN (
+             AND rt.meal_reservation_id IN (
                  SELECT id FROM meal_reservation
-                 WHERE slot_id = $1 AND status = 'CONFIRMED'
+                 WHERE meal_slot_id = $1 AND status = 'CONFIRMED'
              )
-       WHERE st.slot_id = $1
+       WHERE st.meal_slot_id = $1
          AND dt.is_active = TRUE
        GROUP BY st.dining_table_id, dt.table_number, dt.capacity
        ORDER BY free DESC`,
-        [slot_id],
+        [meal_slot_id],
       );
       const tables = tableResult.rows;
       const totalFree = tables.reduce((sum, t) => sum + Number(t.free), 0);
@@ -203,34 +287,43 @@ export class ReservationRepository {
       }
       const assignments = assignTables(tables, party_size);
       // INSERT meal_reservation
-      const hhmm_start = slot.starts_at.slice(0, 5);
-      const hhmm_end = slot.ends_at.slice(0, 5);
-      const reservationResult = await client.query<MealReservation>(
+      const reservationResult = await client.query<ReservationRow>(
         `INSERT INTO meal_reservation
-         (hiker_id, slot_id, party_size, starts_at, ends_at, status, created_at)
-       VALUES ($1, $2, $3, $4, $5, 'CONFIRMED', NOW())
+         (hiker_id, meal_slot_id, party_size, status, preferences, created_at)
+       VALUES ($1, $2, $3, 'CONFIRMED', $4, NOW())
        RETURNING *`,
-        [
-          hiker_id,
-          slot_id,
-          party_size,
-          `${slot.date}T${hhmm_start}:00Z`,
-          `${slot.date}T${hhmm_end}:00Z`,
-        ],
+        [hiker_id, meal_slot_id, party_size, preferences ?? null],
       );
-      const reservation = reservationResult.rows[0];
+      const reservation = toMealReservation({
+        ...reservationResult.rows[0],
+        meal_slot_date: slot.date,
+        meal_slot_starts_at: slot.starts_at,
+        meal_slot_ends_at: slot.ends_at,
+      });
       // INSERT reservation_table rows
       for (const a of assignments) {
         await client.query(
-          `INSERT INTO reservation_table (reservation_id, dining_table_id, seats_assigned)
+          `INSERT INTO reservation_table (meal_reservation_id, dining_table_id, seats_assigned)
          VALUES ($1, $2, $3)`,
           [reservation.id, a.dining_table_id, a.seats_assigned],
+        );
+      }
+
+      for (const group of normalizedAllergens) {
+        await client.query(
+          `INSERT INTO meal_reservation_allergens
+            (meal_reservation_id, people_count, allergens)
+            VALUES ($1, $2, $3::text[])`,
+          [reservation.id, group.people_count, group.allergens],
         );
       }
       await client.query("COMMIT");
       transactionStarted = false;
 
-      return { reservation, tables: assignments };
+      return {
+        reservation: { ...reservation, allergens: normalizedAllergens },
+        tables: assignments,
+      };
     } catch (error) {
       if (client && transactionStarted) {
         try {
@@ -250,23 +343,26 @@ export class ReservationRepository {
   /** Replace a reservation's table assignments and party size atomically. */
   public async updateReservation(
     id: string,
-    party_size: number,
-  ): Promise<{ reservation: MealReservation; tables: Assignment[] }> {
+    {
+      party_size,
+      allergens,
+      preferences,
+    }: Pick<CreateReservationDTO, "party_size" | "allergens" | "preferences">,
+  ): Promise<{ reservation: MealReservationDTO; tables: Assignment[] }> {
     let client: PoolClient | undefined;
     let transactionStarted = false;
-    if (!party_size || party_size <= 0) {
-      throw new InvalidRequestError("party_size must be a positive integer");
-    }
+    positiveInteger(party_size, "party_size");
+    optionalString(preferences, "preferences");
     try {
       client = await pool.connect();
       // Fetch existing reservation + slot info
-      const resResult = await client.query(
+      const resResult = await client.query<ReservationRow & SlotTimes>(
         `SELECT mr.*,
-              ms.date::text       AS slot_date,
-              ms.starts_at::text  AS slot_starts_at,
-              ms.ends_at::text    AS slot_ends_at
+              ms.date::text       AS meal_slot_date,
+              ms.starts_at::text  AS meal_slot_starts_at,
+              ms.ends_at::text    AS meal_slot_ends_at
        FROM meal_reservation mr
-       JOIN meal_slot ms ON ms.id = mr.slot_id
+       JOIN meal_slot ms ON ms.id = mr.meal_slot_id
        WHERE mr.id = $1 AND mr.status = 'CONFIRMED'`,
         [id],
       );
@@ -275,7 +371,9 @@ export class ReservationRepository {
       }
       const existing = resResult.rows[0];
       // 2-hour rule
-      if (!isTwoHoursAhead(existing.slot_date, existing.slot_starts_at)) {
+      if (
+        !isTwoHoursAhead(existing.meal_slot_date, existing.meal_slot_starts_at)
+      ) {
         throw new InvalidRequestError(
           "Cannot modify reservation less than 2 hours before the slot",
         );
@@ -284,9 +382,26 @@ export class ReservationRepository {
       transactionStarted = true;
       // Lock slot_table rows first to prevent race conditions
       await client.query(
-        `SELECT dining_table_id FROM slot_table WHERE slot_id = $1 FOR UPDATE`,
-        [existing.slot_id],
+        `SELECT dining_table_id FROM slot_table WHERE meal_slot_id = $1 FOR UPDATE`,
+        [existing.meal_slot_id],
       );
+
+      const storedAllergens = await client.query<ReservationAllergensDTO>(
+        `SELECT people_count, allergens
+          FROM meal_reservation_allergens
+          WHERE meal_reservation_id = $1
+          ORDER BY id`,
+        [id],
+      );
+
+      // Se il campo è omesso, conserva i gruppi esistenti.
+      // Controlla il totale anche quando cambia soltanto party_size.
+      const effectiveAllergens =
+        reservationAllergens(
+          allergens === undefined ? storedAllergens.rows : allergens,
+          party_size,
+        ) ?? [];
+
       const tableResult = await client.query<{
         dining_table_id: string;
         table_number: number;
@@ -304,17 +419,17 @@ export class ReservationRepository {
        JOIN dining_table dt ON dt.id = st.dining_table_id
        LEFT JOIN reservation_table rt
               ON rt.dining_table_id = st.dining_table_id
-             AND rt.reservation_id IN (
+             AND rt.meal_reservation_id IN (
                  SELECT id FROM meal_reservation
-                 WHERE slot_id = $1
+                 WHERE meal_slot_id = $1
                    AND status = 'CONFIRMED'
                    AND id != $2
              )
-       WHERE st.slot_id = $1
+       WHERE st.meal_slot_id = $1
          AND dt.is_active = TRUE
        GROUP BY st.dining_table_id, dt.table_number, dt.capacity
        ORDER BY free DESC`,
-        [existing.slot_id, id],
+        [existing.meal_slot_id, id],
       );
       const tables = tableResult.rows;
       const totalFree = tables.reduce((sum, t) => sum + Number(t.free), 0);
@@ -327,24 +442,53 @@ export class ReservationRepository {
       const assignments = assignTables(tables, party_size);
       // Replace reservation_table rows
       await client.query(
-        `DELETE FROM reservation_table WHERE reservation_id = $1`,
+        `DELETE FROM reservation_table WHERE meal_reservation_id = $1`,
         [id],
       );
       for (const a of assignments) {
         await client.query(
-          `INSERT INTO reservation_table (reservation_id, dining_table_id, seats_assigned)
+          `INSERT INTO reservation_table (meal_reservation_id, dining_table_id, seats_assigned)
          VALUES ($1, $2, $3)`,
           [id, a.dining_table_id, a.seats_assigned],
         );
       }
       // Update party_size on the reservation
-      const updated = await client.query<MealReservation>(
-        `UPDATE meal_reservation SET party_size = $1 WHERE id = $2 RETURNING *`,
-        [party_size, id],
+      const updated = await client.query<ReservationRow>(
+        `UPDATE meal_reservation
+          SET party_size = $1,
+              preferences = COALESCE($2::text, preferences)
+          WHERE id = $3
+          RETURNING *`,
+        [party_size, preferences ?? null, id],
       );
+      if (allergens !== undefined) {
+        await client.query(
+          `DELETE FROM meal_reservation_allergens
+            WHERE meal_reservation_id = $1`,
+          [id],
+        );
+
+        for (const group of effectiveAllergens) {
+          await client.query(
+            `INSERT INTO meal_reservation_allergens
+         (meal_reservation_id, people_count, allergens)
+       VALUES ($1, $2, $3::text[])`,
+            [id, group.people_count, group.allergens],
+          );
+        }
+      }
       await client.query("COMMIT");
       transactionStarted = false;
-      return { reservation: updated.rows[0], tables: assignments };
+      return {
+        reservation: toMealReservation({
+          ...updated.rows[0],
+          allergens: effectiveAllergens,
+          meal_slot_date: existing.meal_slot_date,
+          meal_slot_starts_at: existing.meal_slot_starts_at,
+          meal_slot_ends_at: existing.meal_slot_ends_at,
+        }),
+        tables: assignments,
+      };
     } catch (error) {
       if (client && transactionStarted) {
         try {
@@ -370,10 +514,10 @@ export class ReservationRepository {
       // Fetch reservation + slot to check 2-hour rule
       const resResult = await client.query(
         `SELECT mr.*,
-              ms.date::text       AS slot_date,
-              ms.starts_at::text  AS slot_starts_at
+              ms.date::text       AS meal_slot_date,
+              ms.starts_at::text  AS meal_slot_starts_at
        FROM meal_reservation mr
-       JOIN meal_slot ms ON ms.id = mr.slot_id
+       JOIN meal_slot ms ON ms.id = mr.meal_slot_id
        WHERE mr.id = $1 AND mr.status = 'CONFIRMED'`,
         [id],
       );
@@ -382,7 +526,12 @@ export class ReservationRepository {
       }
       const reservation = resResult.rows[0];
       // 2-hour rule
-      if (!isTwoHoursAhead(reservation.slot_date, reservation.slot_starts_at)) {
+      if (
+        !isTwoHoursAhead(
+          reservation.meal_slot_date,
+          reservation.meal_slot_starts_at,
+        )
+      ) {
         throw new InvalidRequestError(
           "Cannot cancel reservation less than 2 hours before the slot",
         );
@@ -395,7 +544,7 @@ export class ReservationRepository {
       );
       // Free the assigned table seats
       await client.query(
-        `DELETE FROM reservation_table WHERE reservation_id = $1`,
+        `DELETE FROM reservation_table WHERE meal_reservation_id = $1`,
         [id],
       );
       await client.query("COMMIT");

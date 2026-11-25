@@ -66,11 +66,11 @@ export class SlotsRepository {
        LEFT JOIN (
            SELECT rt.dining_table_id, SUM(rt.seats_assigned)::INT AS booked_seats
            FROM reservation_table rt
-           JOIN meal_reservation mr ON mr.id = rt.reservation_id
-           WHERE mr.slot_id = $1 AND mr.status = 'CONFIRMED'
+           JOIN meal_reservation mr ON mr.id = rt.meal_reservation_id
+           WHERE mr.meal_slot_id = $1 AND mr.status = 'CONFIRMED'
            GROUP BY rt.dining_table_id
        ) booked ON booked.dining_table_id = dt.id
-       WHERE st.slot_id = $1
+       WHERE st.meal_slot_id = $1
        ORDER BY dt.table_number ASC`,
         [slotId],
       );
@@ -133,7 +133,11 @@ export class SlotsRepository {
   public async addTableToSlot(
     slotId: string,
     dining_table_id: string,
-  ): Promise<{ message: string; slot_id: string; dining_table_id: string }> {
+  ): Promise<{
+    message: string;
+    meal_slot_id: string;
+    dining_table_id: string;
+  }> {
     if (!dining_table_id) {
       throw new InvalidRequestError("dining_table_id is required");
     }
@@ -156,14 +160,14 @@ export class SlotsRepository {
       }
       // Insert (idempotent via ON CONFLICT DO NOTHING)
       await pool.query(
-        `INSERT INTO slot_table (slot_id, dining_table_id)
+        `INSERT INTO slot_table (meal_slot_id, dining_table_id)
        VALUES ($1, $2)
        ON CONFLICT DO NOTHING`,
         [slotId, dining_table_id],
       );
       return {
         message: "Table added to slot",
-        slot_id: slotId,
+        meal_slot_id: slotId,
         dining_table_id,
       };
     } catch (error) {
@@ -182,10 +186,10 @@ export class SlotsRepository {
     try {
       // Rejected if active reservations exist for this table on this slot
       const reservationCheck = await pool.query(
-        `SELECT rt.reservation_id
+        `SELECT rt.meal_reservation_id
        FROM reservation_table rt
-       JOIN meal_reservation mr ON mr.id = rt.reservation_id
-       WHERE mr.slot_id = $1
+       JOIN meal_reservation mr ON mr.id = rt.meal_reservation_id
+       WHERE mr.meal_slot_id = $1
          AND rt.dining_table_id = $2
          AND mr.status = 'CONFIRMED'
        LIMIT 1`,
@@ -198,7 +202,7 @@ export class SlotsRepository {
       }
       const result = await pool.query(
         `DELETE FROM slot_table
-       WHERE slot_id = $1 AND dining_table_id = $2
+       WHERE meal_slot_id = $1 AND dining_table_id = $2
        RETURNING *`,
         [slotId, tableId],
       );

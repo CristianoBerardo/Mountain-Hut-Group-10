@@ -71,12 +71,12 @@ export class SlotsTableController {
       const availableSeats =
         availability.tables.reduce((total, table) => total + table.freeSeats, 0);
       const assignments: ReturnType<typeof assignTablesToParty> =
-        availability.slot_id === null
+        availability.meal_slot_id === null
           ? []
           : assignTablesOrEmpty(partySize, availability.tables);
 
       const response: CheckAvailabilityResponseDTO = {
-        slot_id: availability.slot_id,
+        meal_slot_id: availability.meal_slot_id,
         available_times: availability.available_times,
         date,
         time,

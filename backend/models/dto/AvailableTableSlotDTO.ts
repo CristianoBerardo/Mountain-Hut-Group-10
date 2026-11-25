@@ -9,7 +9,7 @@ export interface AvailableDiningTableDTO {
 
 /** Slot availability calculated from active tables and confirmed reservations. */
 export interface AvailableTableSlotDTO {
-  slot_id: string;
+  meal_slot_id: string;
   date: string;
   starts_at: string;
   ends_at: string;

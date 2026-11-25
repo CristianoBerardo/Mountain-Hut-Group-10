@@ -87,7 +87,7 @@ function BookTable() {
             const pending = JSON.parse(saved);
 
             if (
-              typeof pending?.slot_id !== "string" ||
+              typeof pending?.meal_slot_id !== "string" ||
               !Number.isSafeInteger(pending?.party_size) ||
               pending.party_size <= 0 ||
               !Number.isFinite(pending?.expires_at) ||
@@ -98,7 +98,7 @@ function BookTable() {
             }
 
             const selectedSlot = result.find(
-              (slot) => slot.slot_id === pending.slot_id,
+              (slot) => slot.meal_slot_id === pending.meal_slot_id,
             );
 
             if (
@@ -111,7 +111,7 @@ function BookTable() {
             }
 
             setDay(selectedSlot.date);
-            setSlotId(selectedSlot.slot_id);
+            setSlotId(selectedSlot.meal_slot_id);
             setPartySize(String(pending.party_size));
           } catch {
             setError("Could not restore your saved selection.");
@@ -143,7 +143,7 @@ function BookTable() {
   );
   const days = [...new Set(bookableSlots.map((s) => s.date))];
   const daySlots = slots.filter((s) => s.date === day);
-  const slot = slots.find((s) => s.slot_id === slotId);
+  const slot = slots.find((s) => s.meal_slot_id === slotId);
 
   const size = Number(partySize);
   const validSize = Number.isInteger(size) && size > 0;
@@ -235,7 +235,7 @@ function BookTable() {
     try {
       const result = await createReservation({
         hiker_id: hikerId,
-        slot_id: confirmation.slot.slot_id,
+        meal_slot_id: confirmation.slot.meal_slot_id,
         party_size: confirmation.partySize,
       });
 
@@ -347,8 +347,8 @@ function BookTable() {
 
                       return (
                         <option
-                          key={s.slot_id}
-                          value={s.slot_id}
+                          key={s.meal_slot_id}
+                          value={s.meal_slot_id}
                           disabled={reason !== null}
                         >
                           {formatTimeRange(s)}
