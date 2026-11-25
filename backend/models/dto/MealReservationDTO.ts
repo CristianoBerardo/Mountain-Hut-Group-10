@@ -1,6 +1,7 @@
 import { MealReservationStatus } from "../../types/MealReservationStatus";
+import { ReservationAllergensDTO } from "./ReservationAllergensDTO";
 
-export interface MealReservation {
+export interface MealReservationDTO {
   id: string;
   hiker_id: string;
   starts_at: string;
@@ -8,5 +9,7 @@ export interface MealReservation {
   meal_slot_id: string;
   party_size: number;
   status: MealReservationStatus;
+  allergens: ReservationAllergensDTO[];
+  preferences: string | null;
   created_at: string;
 }

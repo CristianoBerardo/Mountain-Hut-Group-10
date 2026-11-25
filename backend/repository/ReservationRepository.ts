@@ -1,8 +1,14 @@
 import { PoolClient } from "pg";
 import { pool } from "../connections/PostgreSQL/database";
 import { InvalidRequestError, NotFoundError } from "../errors/AppError";
-import { MealReservation } from "../models/dto/MealReservation";
+import { MealReservationDTO } from "../models/dto/MealReservationDTO";
+import { ReservationAllergensDTO } from "../models/dto/ReservationAllergensDTO";
 import { CreateReservationDTO } from "../models/dto/ReservationDTO";
+import {
+  optionalString,
+  positiveInteger,
+  reservationAllergens,
+} from "../utils/requestValidation";
 import { throwRepositoryError } from "./utils/repositoryErrors";
 
 type TableRow = {
@@ -11,7 +17,7 @@ type TableRow = {
   free: number;
 };
 
-type ReservationRow = Omit<MealReservation, "starts_at" | "ends_at">;
+type ReservationRow = Omit<MealReservationDTO, "starts_at" | "ends_at">;
 
 type SlotTimes = {
   meal_slot_date: string;
@@ -19,7 +25,9 @@ type SlotTimes = {
   meal_slot_ends_at: string;
 };
 
-function toMealReservation(row: ReservationRow & SlotTimes): MealReservation {
+function toMealReservation(
+  row: ReservationRow & SlotTimes,
+): MealReservationDTO {
   const {
     meal_slot_date,
     meal_slot_starts_at,
@@ -89,13 +97,27 @@ function isTwoHoursAhead(slotDate: string, slotStartsAt: string): boolean {
 
 export class ReservationRepository {
   /** List reservations ordered by their start time. */
-  public async getReservations(): Promise<MealReservation[]> {
+  public async getReservations(): Promise<MealReservationDTO[]> {
     try {
       const result = await pool.query<ReservationRow & SlotTimes>(
         `SELECT mr.*,
                 ms.date::text AS meal_slot_date,
                 ms.starts_at::text AS meal_slot_starts_at,
-                ms.ends_at::text AS meal_slot_ends_at
+                ms.ends_at::text AS meal_slot_ends_at,
+          COALESCE(
+              (
+                  SELECT json_agg(
+                      json_build_object(
+                          'people_count', ra.people_count,
+                          'allergens', ra.allergens
+                      )
+                      ORDER BY ra.id
+                  )
+                  FROM meal_reservation_allergens ra
+                  WHERE ra.meal_reservation_id = mr.id
+              ),
+              '[]'::json
+          ) AS allergens
           FROM meal_reservation mr
           JOIN meal_slot ms ON ms.id = mr.meal_slot_id
           ORDER BY ms.date ASC, ms.starts_at ASC`,
@@ -111,7 +133,7 @@ export class ReservationRepository {
   /** Retrieve a reservation together with its assigned tables. */
   public async getReservationById(
     id: string,
-  ): Promise<MealReservation & { tables: Assignment[] }> {
+  ): Promise<MealReservationDTO & { tables: Assignment[] }> {
     try {
       // Define the expected shape of each query result row:
       // reservation data, slot date/time fields, and assigned tables.
@@ -133,7 +155,21 @@ export class ReservationRepository {
              )
            ) FILTER (WHERE rt.dining_table_id IS NOT NULL),
            '[]'
-         ) AS tables
+         ) AS tables,
+         COALESCE(
+          (
+            SELECT json_agg(
+              json_build_object(
+                'people_count', ra.people_count,
+                'allergens', ra.allergens
+              )
+              ORDER BY ra.id
+            )
+            FROM meal_reservation_allergens ra
+            WHERE ra.meal_reservation_id = mr.id
+          ),
+          '[]'::json
+        ) AS allergens
        FROM meal_reservation mr
        JOIN meal_slot ms ON ms.id = mr.meal_slot_id
        LEFT JOIN reservation_table rt ON rt.meal_reservation_id = mr.id
@@ -158,8 +194,10 @@ export class ReservationRepository {
     meal_slot_id,
     party_size,
     hiker_id,
+    allergens = [],
+    preferences,
   }: CreateReservationDTO & { hiker_id: string }): Promise<{
-    reservation: MealReservation;
+    reservation: MealReservationDTO;
     tables: Assignment[];
   }> {
     let client: PoolClient | undefined;
@@ -170,9 +208,11 @@ export class ReservationRepository {
     if (!meal_slot_id) {
       throw new InvalidRequestError("meal_slot_id is required");
     }
-    if (!party_size || party_size <= 0) {
-      throw new InvalidRequestError("party_size must be a positive integer");
-    }
+    positiveInteger(party_size, "party_size");
+    optionalString(preferences, "preferences");
+
+    const normalizedAllergens =
+      reservationAllergens(allergens, party_size) ?? [];
     try {
       client = await pool.connect();
       // Fetch slot
@@ -249,10 +289,10 @@ export class ReservationRepository {
       // INSERT meal_reservation
       const reservationResult = await client.query<ReservationRow>(
         `INSERT INTO meal_reservation
-         (hiker_id, meal_slot_id, party_size, status, created_at)
-       VALUES ($1, $2, $3, 'CONFIRMED', NOW())
+         (hiker_id, meal_slot_id, party_size, status, preferences, created_at)
+       VALUES ($1, $2, $3, 'CONFIRMED', $4, NOW())
        RETURNING *`,
-        [hiker_id, meal_slot_id, party_size],
+        [hiker_id, meal_slot_id, party_size, preferences ?? null],
       );
       const reservation = toMealReservation({
         ...reservationResult.rows[0],
@@ -268,10 +308,22 @@ export class ReservationRepository {
           [reservation.id, a.dining_table_id, a.seats_assigned],
         );
       }
+
+      for (const group of normalizedAllergens) {
+        await client.query(
+          `INSERT INTO meal_reservation_allergens
+            (meal_reservation_id, people_count, allergens)
+            VALUES ($1, $2, $3::text[])`,
+          [reservation.id, group.people_count, group.allergens],
+        );
+      }
       await client.query("COMMIT");
       transactionStarted = false;
 
-      return { reservation, tables: assignments };
+      return {
+        reservation: { ...reservation, allergens: normalizedAllergens },
+        tables: assignments,
+      };
     } catch (error) {
       if (client && transactionStarted) {
         try {
@@ -291,13 +343,16 @@ export class ReservationRepository {
   /** Replace a reservation's table assignments and party size atomically. */
   public async updateReservation(
     id: string,
-    party_size: number,
-  ): Promise<{ reservation: MealReservation; tables: Assignment[] }> {
+    {
+      party_size,
+      allergens,
+      preferences,
+    }: Pick<CreateReservationDTO, "party_size" | "allergens" | "preferences">,
+  ): Promise<{ reservation: MealReservationDTO; tables: Assignment[] }> {
     let client: PoolClient | undefined;
     let transactionStarted = false;
-    if (!party_size || party_size <= 0) {
-      throw new InvalidRequestError("party_size must be a positive integer");
-    }
+    positiveInteger(party_size, "party_size");
+    optionalString(preferences, "preferences");
     try {
       client = await pool.connect();
       // Fetch existing reservation + slot info
@@ -330,6 +385,23 @@ export class ReservationRepository {
         `SELECT dining_table_id FROM slot_table WHERE meal_slot_id = $1 FOR UPDATE`,
         [existing.meal_slot_id],
       );
+
+      const storedAllergens = await client.query<ReservationAllergensDTO>(
+        `SELECT people_count, allergens
+          FROM meal_reservation_allergens
+          WHERE meal_reservation_id = $1
+          ORDER BY id`,
+        [id],
+      );
+
+      // Se il campo è omesso, conserva i gruppi esistenti.
+      // Controlla il totale anche quando cambia soltanto party_size.
+      const effectiveAllergens =
+        reservationAllergens(
+          allergens === undefined ? storedAllergens.rows : allergens,
+          party_size,
+        ) ?? [];
+
       const tableResult = await client.query<{
         dining_table_id: string;
         table_number: number;
@@ -382,14 +454,35 @@ export class ReservationRepository {
       }
       // Update party_size on the reservation
       const updated = await client.query<ReservationRow>(
-        `UPDATE meal_reservation SET party_size = $1 WHERE id = $2 RETURNING *`,
-        [party_size, id],
+        `UPDATE meal_reservation
+          SET party_size = $1,
+              preferences = COALESCE($2::text, preferences)
+          WHERE id = $3
+          RETURNING *`,
+        [party_size, preferences ?? null, id],
       );
+      if (allergens !== undefined) {
+        await client.query(
+          `DELETE FROM meal_reservation_allergens
+            WHERE meal_reservation_id = $1`,
+          [id],
+        );
+
+        for (const group of effectiveAllergens) {
+          await client.query(
+            `INSERT INTO meal_reservation_allergens
+         (meal_reservation_id, people_count, allergens)
+       VALUES ($1, $2, $3::text[])`,
+            [id, group.people_count, group.allergens],
+          );
+        }
+      }
       await client.query("COMMIT");
       transactionStarted = false;
       return {
         reservation: toMealReservation({
           ...updated.rows[0],
+          allergens: effectiveAllergens,
           meal_slot_date: existing.meal_slot_date,
           meal_slot_starts_at: existing.meal_slot_starts_at,
           meal_slot_ends_at: existing.meal_slot_ends_at,
