@@ -226,7 +226,7 @@ function BookTable() {
       <Navbar />
       <main className="client-booking">
         {booking ? (
-          <section className="client-card" aria-live="polite">
+          <section className="client-card client-card-confirmed" aria-live="polite">
             <h1>Your table is booked</h1>
             <p className="client-lead">
               We look forward to seeing you at the hut.
@@ -278,96 +278,102 @@ function BookTable() {
               </p>
             )}
 
-            <div className="client-field">
-              <span>Date</span>
-              <BookingCalendar
-                availableDays={days}
-                selected={day}
-                onSelect={chooseDay}
-              />
-              <small className="client-hint">
-                {loading
-                  ? "Loading available dates…"
-                  : day
-                    ? formatDay(day)
-                    : "Choose one of the highlighted dates."}
-              </small>
-            </div>
+            <div className="booking-grid">
+              <div className="booking-calendar-col">
+                <div className="client-field">
+                  <span>Date</span>
+                  <BookingCalendar
+                    availableDays={days}
+                    selected={day}
+                    onSelect={chooseDay}
+                  />
+                  <small className="client-hint">
+                    {loading
+                      ? "Loading available dates…"
+                      : day
+                        ? formatDay(day)
+                        : "Choose one of the highlighted dates."}
+                  </small>
+                </div>
+              </div>
 
-            <label className="client-field">
-              <span>Time</span>
-              <select
-                value={slotId}
-                onChange={(e) => {
-                  setSlotId(e.target.value);
-                  setError("");
-                }}
-                disabled={!day}
-                required
-              >
-                <option value="">
-                  {day ? "Choose a time" : "Choose a date first"}
-                </option>
-                {daySlots.map((s) => {
-                  const reason = unavailableReason(s);
-
-                  return (
-                    <option
-                      key={s.slot_id}
-                      value={s.slot_id}
-                      disabled={reason !== null}
-                    >
-                      {formatTimeRange(s)}
-                      {reason ? ` (${reason})` : ""}
+              <div className="booking-details-col">
+                <label className="client-field">
+                  <span>Time</span>
+                  <select
+                    value={slotId}
+                    onChange={(e) => {
+                      setSlotId(e.target.value);
+                      setError("");
+                    }}
+                    disabled={!day}
+                    required
+                  >
+                    <option value="">
+                      {day ? "Choose a time" : "Choose a date first"}
                     </option>
-                  );
-                })}
-              </select>
-            </label>
+                    {daySlots.map((s) => {
+                      const reason = unavailableReason(s);
 
-            <label className="client-field">
-              <span>Number of people</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={slot?.available_seats}
-                placeholder="e.g. 4"
-                value={partySize}
-                onChange={(e) => {
-                  setPartySize(e.target.value);
-                  setError("");
-                }}
-                required
-              />
-              {slot && (
-                <small
-                  className={tooMany ? "client-hint warning" : "client-hint"}
+                      return (
+                        <option
+                          key={s.slot_id}
+                          value={s.slot_id}
+                          disabled={reason !== null}
+                        >
+                          {formatTimeRange(s)}
+                          {reason ? ` (${reason})` : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </label>
+
+                <label className="client-field">
+                  <span>Number of people</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={slot?.available_seats}
+                    placeholder="e.g. 4"
+                    value={partySize}
+                    onChange={(e) => {
+                      setPartySize(e.target.value);
+                      setError("");
+                    }}
+                    required
+                  />
+                  {slot && (
+                    <small
+                      className={tooMany ? "client-hint warning" : "client-hint"}
+                    >
+                      {slot.available_seats} seats free at this time.
+                    </small>
+                  )}
+                </label>
+
+                {error && (
+                  <p className="client-error" role="alert">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="client-button"
+                  disabled={submitting || loading || !!loadError || tooMany}
                 >
-                  {slot.available_seats} seats free at this time.
-                </small>
-              )}
-            </label>
+                  {submitting ? "Booking…" : "Book table"}
+                </button>
 
-            {error && (
-              <p className="client-error" role="alert">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              className="client-button"
-              disabled={submitting || loading || !!loadError || tooMany}
-            >
-              {submitting ? "Booking…" : "Book table"}
-            </button>
-
-            <p className="client-note">
-              Bookings close {BOOKING_NOTICE_HOURS} hours before the meal.
-              Tables are shared with other guests; we keep your party together
-              whenever possible.
-            </p>
+                <p className="client-note">
+                  Bookings close {BOOKING_NOTICE_HOURS} hours before the meal.
+                  Tables are shared with other guests; we keep your party together
+                  whenever possible.
+                </p>
+              </div>
+            </div>
           </form>
         )}
       </main>

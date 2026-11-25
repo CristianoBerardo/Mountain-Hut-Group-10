@@ -19,10 +19,17 @@
 }
 
 .book-table-page .client-card {
+  width: min(880px, 100%);
+  max-width: 880px;
+  padding: 36px 40px;
   background: #fff;
   border-color: #e8e9df;
   border-radius: 8px;
   box-shadow: 0 16px 42px rgba(35, 51, 44, 0.09);
+}
+
+.book-table-page .client-card.client-card-confirmed {
+  max-width: 540px;
 }
 
 .book-table-page .client-card h1 {
@@ -31,7 +38,7 @@
   font-weight: 400;
 }
 
-.book-table-page .client-field > span {
+.book-table-page .client-field>span {
   color: #344a3d;
 }
 
@@ -72,4 +79,52 @@
 
 .book-table-page .calendar-day:hover:not(:disabled) {
   border-color: #718b69;
+}
+
+/* ==========================================
+   BOOKING 2-COLUMN RESPONSIVE LAYOUT
+   ========================================== */
+
+.booking-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 36px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.booking-calendar-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.booking-details-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.book-table-page .client-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .book-table-page .client-booking {
+    padding: 24px 16px;
+  }
+
+  .book-table-page .client-card {
+    padding: 24px 20px;
+  }
+
+  .booking-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .book-table-page .client-summary {
+    grid-template-columns: 1fr;
+  }
 }
