@@ -1,7 +1,11 @@
+import { ReservationAllergensDTO } from "./ReservationAllergensDTO";
+
 // POST /api/v1/reservations  (US1)
 export interface CreateReservationDTO {
   meal_slot_id: string; // which slot to book
   party_size: number; // number of people
+  allergens?: ReservationAllergensDTO[]; // list of allergens
+  preferences?: string; // reservation preferences
 }
 
 // POST /api/v1/slots  (US2)

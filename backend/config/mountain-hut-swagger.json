@@ -95,12 +95,7 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name",
-                  "surname",
-                  "email",
-                  "mobile_number"
-                ],
+                "required": ["name", "surname", "email", "mobile_number"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -144,6 +139,9 @@
           "401": {
             "description": "Authorization header missing or invalid"
           },
+          "409": {
+            "description": "A user with this Firebase UID or email address already exists."
+          },
           "500": {
             "description": "Internal server error"
           }
@@ -152,9 +150,7 @@
     },
     "/api/v1/tables": {
       "post": {
-        "tags": [
-          "Tables"
-        ],
+        "tags": ["Tables"],
         "security": [
           {
             "BearerAuth": []
@@ -164,7 +160,7 @@
         "summary": "Create a table",
         "operationId": "createTable",
         "responses": {
-          "200": {
+          "201": {
             "description": "Table created successfully"
           },
           "400": {
@@ -190,13 +186,70 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": ["Tables"],
+        "summary": "Get all tables",
+        "description": "Lists dining tables ordered by table number. Supports optional active-state and available-capacity filters. Returns an empty array if no tables match.",
+        "operationId": "getTables",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-roles": ["EMPLOYEE", "WARDEN"],
+        "parameters": [
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "description": "Filter by active state: true selects active tables, false selects inactive tables. Omit to include both.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "available",
+            "in": "query",
+            "required": false,
+            "description": "When true, include only tables with occupancy below capacity. False or omission applies no availability filter.",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dining tables matching the filters, ordered by table number.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Table"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters: active and available must be true or false when provided."
+          },
+          "401": {
+            "description": "Authorization header missing or invalid."
+          },
+          "403": {
+            "description": "Forbidden: user does not have the required role."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
       }
     },
     "/api/v1/tables/{tableId}": {
       "get": {
-        "tags": [
-          "Tables"
-        ],
+        "tags": ["Tables"],
         "security": [
           {
             "BearerAuth": []
@@ -229,9 +282,7 @@
         ]
       },
       "patch": {
-        "tags": [
-          "Tables"
-        ],
+        "tags": ["Tables"],
         "security": [
           {
             "BearerAuth": []
@@ -274,9 +325,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Tables"
-        ],
+        "tags": ["Tables"],
         "security": [
           {
             "BearerAuth": []
@@ -311,9 +360,7 @@
     },
     "/api/v1/tables/number/{tableNumber}": {
       "get": {
-        "tags": [
-          "Tables"
-        ],
+        "tags": ["Tables"],
         "security": [
           {
             "BearerAuth": []
@@ -348,9 +395,7 @@
     },
     "/api/v1/tables/{tableId}/reset": {
       "patch": {
-        "tags": [
-          "Tables"
-        ],
+        "tags": ["Tables"],
         "security": [
           {
             "BearerAuth": []
@@ -385,9 +430,7 @@
     },
     "/api/v1/reservations": {
       "get": {
-        "tags": [
-          "Reservations"
-        ],
+        "tags": ["Reservations"],
         "security": [
           {
             "BearerAuth": []
@@ -398,7 +441,17 @@
         "operationId": "getReservations",
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Reservations ordered by meal start time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reservation"
+                  }
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid request"
@@ -409,15 +462,16 @@
           "403": {
             "description": "Forbidden: User does not have the required role"
           },
+          "404": {
+            "description": "No reservations found."
+          },
           "500": {
             "description": "Internal server error"
           }
         }
       },
       "post": {
-        "tags": [
-          "Reservations"
-        ],
+        "tags": ["Reservations"],
         "security": [
           {
             "BearerAuth": []
@@ -427,14 +481,30 @@
         "summary": "Create a reservation",
         "operationId": "createReservation",
         "responses": {
-          "200": {
-            "description": "Reservation created successfully"
+          "201": {
+            "description": "Reservation created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationMutationResponse"
+                }
+              }
+            }
           },
           "400": {
-            "description": "Invalid request"
+            "description": "Invalid request, invalid dietary information, duplicate confirmed booking, insufficient seats, or less than two hours before the meal."
           },
           "401": {
             "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: user does not have the required role."
+          },
+          "404": {
+            "description": "Selected meal slot not found."
+          },
+          "409": {
+            "description": "The reservation conflicts with an existing or related record."
           },
           "500": {
             "description": "Internal server error"
@@ -446,17 +516,45 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateReservationRequest"
+              },
+              "examples": {
+                "withoutDietaryRequirements": {
+                  "summary": "Reservation without dietary requirements",
+                  "value": {
+                    "hiker_id": "f2693a0f-0a2c-4402-a771-481f4a1f4ea8",
+                    "meal_slot_id": "aaaaaaaa-0001-0001-0001-000000000001",
+                    "party_size": 3
+                  }
+                },
+                "withDietaryRequirements": {
+                  "summary": "Three people in two allergen groups and one shared preference textbox",
+                  "value": {
+                    "hiker_id": "f2693a0f-0a2c-4402-a771-481f4a1f4ea8",
+                    "meal_slot_id": "aaaaaaaa-0001-0001-0001-000000000001",
+                    "party_size": 3,
+                    "allergens": [
+                      {
+                        "people_count": 2,
+                        "allergens": ["MILK", "SULPHITES"]
+                      },
+                      {
+                        "people_count": 1,
+                        "allergens": ["LUPIN", "MILK"]
+                      }
+                    ],
+                    "preferences": "One vegetarian; avoid spicy food."
+                  }
+                }
               }
             }
           }
-        }
+        },
+        "description": "Creates a confirmed reservation and assigns tables. Reservations must be made at least two hours before the meal starts. Allergens and preferences are optional and are saved together with the reservation."
       }
     },
     "/api/v1/reservations/{reservationId}": {
       "get": {
-        "tags": [
-          "Reservations"
-        ],
+        "tags": ["Reservations"],
         "security": [
           {
             "BearerAuth": []
@@ -467,13 +565,26 @@
         "operationId": "getReservationById",
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Reservation details including assigned tables and dietary information.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationDetails"
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid request"
           },
           "401": {
             "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: user does not have the required role."
+          },
+          "404": {
+            "description": "Reservation not found."
           },
           "500": {
             "description": "Internal server error"
@@ -486,9 +597,7 @@
         ]
       },
       "patch": {
-        "tags": [
-          "Reservations"
-        ],
+        "tags": ["Reservations"],
         "security": [
           {
             "BearerAuth": []
@@ -499,13 +608,29 @@
         "operationId": "updateReservation",
         "responses": {
           "200": {
-            "description": "Successful response"
+            "description": "Updated reservation and table assignments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservationMutationResponse"
+                }
+              }
+            }
           },
           "400": {
-            "description": "Invalid request"
+            "description": "Invalid request, invalid dietary information, group total exceeding party_size, insufficient seats, or less than two hours before the meal."
           },
           "401": {
             "description": "Authorization header missing or invalid"
+          },
+          "403": {
+            "description": "Forbidden: user does not have the required role."
+          },
+          "404": {
+            "description": "Reservation not found or not modifiable."
+          },
+          "409": {
+            "description": "The update conflicts with an existing or related record."
           },
           "500": {
             "description": "Internal server error"
@@ -522,15 +647,47 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateReservationRequest"
+              },
+              "examples": {
+                "preserveDietaryRequirements": {
+                  "summary": "Change party size and preserve dietary requirements",
+                  "value": {
+                    "party_size": 4
+                  }
+                },
+                "replaceDietaryRequirements": {
+                  "summary": "Replace allergen groups and preferences",
+                  "value": {
+                    "party_size": 3,
+                    "allergens": [
+                      {
+                        "people_count": 2,
+                        "allergens": ["MILK", "SULPHITES"]
+                      },
+                      {
+                        "people_count": 1,
+                        "allergens": ["LUPIN", "MILK"]
+                      }
+                    ],
+                    "preferences": "One vegetarian; avoid spicy food."
+                  }
+                },
+                "clearDietaryRequirements": {
+                  "summary": "Remove all groups and clear preferences",
+                  "value": {
+                    "party_size": 3,
+                    "allergens": [],
+                    "preferences": ""
+                  }
+                }
               }
             }
           }
-        }
+        },
+        "description": "Updates a confirmed reservation at least two hours before the meal. party_size is required. Omitted allergens or preferences preserve their existing values. An empty allergens array removes all groups; an empty preferences string clears the text."
       },
       "delete": {
-        "tags": [
-          "Reservations"
-        ],
+        "tags": ["Reservations"],
         "security": [
           {
             "BearerAuth": []
@@ -562,9 +719,7 @@
     },
     "/api/v1/slots": {
       "get": {
-        "tags": [
-          "Slots"
-        ],
+        "tags": ["Slots"],
         "security": [
           {
             "BearerAuth": []
@@ -592,9 +747,7 @@
         }
       },
       "post": {
-        "tags": [
-          "Slots"
-        ],
+        "tags": ["Slots"],
         "security": [
           {
             "BearerAuth": []
@@ -604,7 +757,7 @@
         "summary": "Create a meal slot",
         "operationId": "createMealSlot",
         "responses": {
-          "200": {
+          "201": {
             "description": "Meal slot created successfully"
           },
           "400": {
@@ -634,9 +787,7 @@
     },
     "/api/v1/slots/{slotId}": {
       "get": {
-        "tags": [
-          "Slots"
-        ],
+        "tags": ["Slots"],
         "security": [
           {
             "BearerAuth": []
@@ -669,9 +820,7 @@
         ]
       },
       "delete": {
-        "tags": [
-          "Slots"
-        ],
+        "tags": ["Slots"],
         "security": [
           {
             "BearerAuth": []
@@ -706,9 +855,7 @@
     },
     "/api/v1/slots/{slotId}/details": {
       "get": {
-        "tags": [
-          "Slots"
-        ],
+        "tags": ["Slots"],
         "security": [
           {
             "BearerAuth": []
@@ -743,9 +890,7 @@
     },
     "/api/v1/slots/availability": {
       "get": {
-        "tags": [
-          "Slots"
-        ],
+        "tags": ["Slots"],
         "security": [],
         "summary": "Check table availability for a date, time and party size",
         "operationId": "checkAvailability",
@@ -866,9 +1011,7 @@
     },
     "/api/v1/slots/available": {
       "get": {
-        "tags": [
-          "Slots"
-        ],
+        "tags": ["Slots"],
         "security": [
           {
             "BearerAuth": []
@@ -895,9 +1038,7 @@
     },
     "/api/v1/slots/{slotId}/tables": {
       "post": {
-        "tags": [
-          "Slots"
-        ],
+        "tags": ["Slots"],
         "security": [
           {
             "BearerAuth": []
@@ -907,8 +1048,8 @@
         "summary": "Add a table to a meal slot",
         "operationId": "addTableToSlot",
         "responses": {
-          "200": {
-            "description": "Successful response"
+          "201": {
+            "description": "Dining table assigned to the meal slot successfully."
           },
           "400": {
             "description": "Invalid request"
@@ -942,9 +1083,7 @@
     },
     "/api/v1/slots/{slotId}/tables/{tableId}": {
       "delete": {
-        "tags": [
-          "Slots"
-        ],
+        "tags": ["Slots"],
         "security": [
           {
             "BearerAuth": []
@@ -989,9 +1128,7 @@
     },
     "/api/v1/users/": {
       "get": {
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "security": [
           {
             "BearerAuth": []
@@ -1021,9 +1158,7 @@
     },
     "/api/v1/users/{firebase_uid}": {
       "get": {
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "summary": "Get a user by Firebase UID",
         "description": "Retrieve a single user using their Firebase Authentication UID (not the PostgreSQL UUID). The response contains the fields of the corresponding Hiker, Employee or Warden DTO. Enter an existing Firebase UID to try a successful request, or an unknown UID to test the 404 response. This route currently has no authentication middleware.",
         "operationId": "getUserByFirebaseUid",
@@ -1084,12 +1219,7 @@
       },
       "CreateTableRequest": {
         "type": "object",
-        "required": [
-          "table_number",
-          "capacity",
-          "occupancy",
-          "is_active"
-        ],
+        "required": ["table_number", "capacity", "occupancy", "is_active"],
         "properties": {
           "table_number": {
             "type": "integer",
@@ -1126,68 +1256,194 @@
           }
         }
       },
+      "Allergen": {
+        "type": "string",
+        "description": "Supported allergen category code.",
+        "enum": [
+          "GLUTEN_CEREALS",
+          "CRUSTACEANS",
+          "EGGS",
+          "FISH",
+          "PEANUTS",
+          "SOYBEANS",
+          "MILK",
+          "TREE_NUTS",
+          "CELERY",
+          "MUSTARD",
+          "SESAME",
+          "SULPHITES",
+          "LUPIN",
+          "MOLLUSCS"
+        ],
+        "example": "MILK"
+      },
+      "ReservationAllergenGroup": {
+        "type": "object",
+        "required": ["people_count", "allergens"],
+        "description": "A group of people sharing the same combination of allergens.",
+        "properties": {
+          "people_count": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of people with this complete combination of allergens.",
+            "example": 2
+          },
+          "allergens": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Allergens for this group. Repeated codes are removed and the codes are sorted before saving.",
+            "items": {
+              "$ref": "#/components/schemas/Allergen"
+            },
+            "example": ["MILK", "SULPHITES"]
+          }
+        }
+      },
       "Reservation": {
         "type": "object",
+        "required": [
+          "id",
+          "hiker_id",
+          "meal_slot_id",
+          "starts_at",
+          "ends_at",
+          "party_size",
+          "status",
+          "allergens",
+          "preferences",
+          "created_at"
+        ],
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "example": "bbbbbbbb-0001-0001-0001-000000000001"
           },
           "hiker_id": {
             "type": "string",
             "format": "uuid",
             "example": "f2693a0f-0a2c-4402-a771-481f4a1f4ea8"
           },
-          "starts_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2026-11-03T14:00:00Z"
-          },
-          "ends_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2026-11-03T15:00:00Z"
-          },
           "meal_slot_id": {
             "type": "string",
             "format": "uuid",
             "example": "aaaaaaaa-0001-0001-0001-000000000001"
           },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start time derived from the meal slot.",
+            "example": "2026-11-29T12:00:00Z"
+          },
+          "ends_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "End time derived from the meal slot.",
+            "example": "2026-11-29T13:30:00Z"
+          },
           "party_size": {
             "type": "integer",
-            "example": 2
+            "minimum": 1,
+            "example": 3
           },
           "status": {
             "type": "string",
+            "enum": ["CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"],
             "example": "CONFIRMED"
+          },
+          "allergens": {
+            "type": "array",
+            "description": "Each row represents people sharing the same complete combination of allergens. Count each person in one group only. The sum of people_count must not exceed party_size. Duplicate combinations are rejected after sorting and removing repeated allergens within each row. An empty array means no allergen groups have been recorded.",
+            "items": {
+              "$ref": "#/components/schemas/ReservationAllergenGroup"
+            },
+            "example": [
+              {
+                "people_count": 2,
+                "allergens": ["MILK", "SULPHITES"]
+              },
+              {
+                "people_count": 1,
+                "allergens": ["LUPIN", "MILK"]
+              }
+            ]
+          },
+          "preferences": {
+            "type": "string",
+            "nullable": true,
+            "description": "Free-text dietary preferences for the entire reservation. Null when no preference has been recorded; an empty string is also possible.",
+            "example": "One vegetarian; avoid spicy food."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-25T09:00:00Z"
+          }
+        }
+      },
+      "ReservationTableAssignment": {
+        "type": "object",
+        "required": ["dining_table_id", "table_number", "seats_assigned"],
+        "properties": {
+          "dining_table_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "dddddddd-0001-0001-0001-000000000001"
+          },
+          "table_number": {
+            "type": "integer",
+            "minimum": 1,
+            "example": 3
+          },
+          "seats_assigned": {
+            "type": "integer",
+            "minimum": 1,
+            "example": 3
+          }
+        }
+      },
+      "ReservationDetails": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Reservation"
+          },
+          {
+            "type": "object",
+            "required": ["tables"],
+            "properties": {
+              "tables": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ReservationTableAssignment"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "ReservationMutationResponse": {
+        "type": "object",
+        "required": ["reservation", "tables"],
+        "properties": {
+          "reservation": {
+            "$ref": "#/components/schemas/Reservation"
+          },
+          "tables": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReservationTableAssignment"
+            }
           }
         }
       },
       "CreateReservationRequest": {
         "type": "object",
-        "required": [
-          "hiker_id",
-          "starts_at",
-          "ends_at",
-          "meal_slot_id",
-          "party_size",
-          "status"
-        ],
+        "required": ["hiker_id", "meal_slot_id", "party_size"],
         "properties": {
           "hiker_id": {
             "type": "string",
             "format": "uuid",
             "example": "f2693a0f-0a2c-4402-a771-481f4a1f4ea8"
-          },
-          "starts_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2026-11-03T14:00:00Z"
-          },
-          "ends_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2026-11-03T15:00:00Z"
           },
           "meal_slot_id": {
             "type": "string",
@@ -1196,30 +1452,71 @@
           },
           "party_size": {
             "type": "integer",
-            "example": 2
+            "minimum": 1,
+            "example": 3
           },
-          "status": {
+          "allergens": {
+            "type": "array",
+            "description": "Each row represents people sharing the same complete combination of allergens. Count each person in one group only. The sum of people_count must not exceed party_size. Duplicate combinations are rejected after sorting and removing repeated allergens within each row. Optional. If omitted or empty, no allergen groups are saved. Null is rejected.",
+            "items": {
+              "$ref": "#/components/schemas/ReservationAllergenGroup"
+            },
+            "default": [],
+            "example": [
+              {
+                "people_count": 2,
+                "allergens": ["MILK", "SULPHITES"]
+              },
+              {
+                "people_count": 1,
+                "allergens": ["LUPIN", "MILK"]
+              }
+            ]
+          },
+          "preferences": {
             "type": "string",
-            "example": "CONFIRMED"
+            "description": "Optional free-text preferences for the entire reservation. If omitted, NULL is stored. An empty string is accepted; null in the request is rejected.",
+            "example": "One vegetarian; avoid spicy food."
           }
         }
       },
       "UpdateReservationRequest": {
         "type": "object",
+        "required": ["party_size"],
         "properties": {
           "party_size": {
             "type": "integer",
-            "example": 2
+            "minimum": 1,
+            "example": 3,
+            "description": "Required even when only dietary information changes. If allergens is omitted, the existing group total must still fit this party size."
+          },
+          "allergens": {
+            "type": "array",
+            "description": "Each row represents people sharing the same complete combination of allergens. Count each person in one group only. The sum of people_count must not exceed party_size. Duplicate combinations are rejected after sorting and removing repeated allergens within each row. If omitted, existing groups are preserved. An empty array removes all groups. A non-empty array replaces all groups. Null is rejected.",
+            "items": {
+              "$ref": "#/components/schemas/ReservationAllergenGroup"
+            },
+            "example": [
+              {
+                "people_count": 2,
+                "allergens": ["MILK", "SULPHITES"]
+              },
+              {
+                "people_count": 1,
+                "allergens": ["LUPIN", "MILK"]
+              }
+            ]
+          },
+          "preferences": {
+            "type": "string",
+            "description": "Free-text preferences for the entire reservation. If omitted, the existing text is preserved. Send an empty string to clear it. Null is rejected.",
+            "example": "One vegetarian; avoid spicy food."
           }
         }
       },
       "CreateSlotRequest": {
         "type": "object",
-        "required": [
-          "date",
-          "starts_at",
-          "ends_at"
-        ],
+        "required": ["date", "starts_at", "ends_at"],
         "properties": {
           "date": {
             "type": "string",
@@ -1238,9 +1535,7 @@
       },
       "AddTableToSlotRequest": {
         "type": "object",
-        "required": [
-          "dining_table_id"
-        ],
+        "required": ["dining_table_id"],
         "properties": {
           "dining_table_id": {
             "type": "string",
