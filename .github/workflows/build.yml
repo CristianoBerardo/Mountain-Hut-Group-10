@@ -17,6 +17,17 @@ jobs:
       # This step should build, test and generate coverage reports
       # - name: Build and test
       #   run: <build + test + generate coverage reports>
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.x"
+      - name: Install dependencies
+        run: npm run install:all
+      - name: Build project
+        run: npm run build
+      - name: Run tests with coverage
+        working-directory: backend
+        run: npm test -- --coverage
       - name: Cache SonarQube packages
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -31,3 +42,4 @@ jobs:
           args: >
             -Dsonar.organization=cristianoberardo
             -Dsonar.projectKey=CristianoBerardo_Mountain-Hut-Group-10
+            -Dsonar.javascript.lcov.reportPaths=backend/coverage/lcov.info
