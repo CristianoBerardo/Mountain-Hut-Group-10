@@ -392,7 +392,7 @@
   margin-top: 14px;
 }
 
-.copy-from~.table-grid {
+.copy-from ~ .table-grid {
   margin-top: 0;
 }
 
@@ -739,8 +739,20 @@
   scrollbar-width: none;
   box-sizing: border-box;
   /* fade items toward the top and bottom edges */
-  mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 35%,
+    #000 65%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 35%,
+    #000 65%,
+    transparent
+  );
 }
 
 .time-wheel::-webkit-scrollbar {
@@ -754,6 +766,11 @@
 }
 
 .time-wheel-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
   height: 36px;
   display: flex;
   align-items: center;
@@ -820,7 +837,6 @@
   .slot-form-row {
     grid-template-columns: 1fr;
   }
-
 }
 
 .manage-slots-page .slots-panel {

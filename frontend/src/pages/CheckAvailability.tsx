@@ -78,9 +78,9 @@ function CheckAvailability() {
         }),
       );
       if (isLoggedIn) {
-        navigate("/book");
+        void navigate("/book");
       } else {
-        navigate("/login", { state: { from: "/book" } });
+        void navigate("/login", { state: { from: "/book" } });
       }
     } catch {
       setError("Something went wrong, try again.");

@@ -51,7 +51,7 @@ function Login() {
             sessionStorage.setItem("role", response.user.role);
             sessionStorage.setItem("user_id", response.user.id);
 
-            navigate(from, { replace: true });
+            void navigate(from, { replace: true });
 
         } catch (err) {
             setError(
@@ -89,7 +89,7 @@ function Login() {
                 sessionStorage.setItem("role", response.user.role);
             sessionStorage.setItem("user_id", response.user.id);
 
-                navigate(from, { replace: true });
+                void navigate(from, { replace: true });
             }
             catch (err) {
 
@@ -99,7 +99,7 @@ function Login() {
                     err.message.includes("404")
                 ) {
                     // Utente autenticato con Firebase, ma non registrato in PostgreSQL
-                    navigate("/register", {
+                    void navigate("/register", {
                         state: {
                             displayName: credentials.user.displayName || "",
                             email: credentials.user.email || "",

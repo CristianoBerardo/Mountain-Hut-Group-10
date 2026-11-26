@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { registerUser } from "../api/authAPI";
 import "../App.css";
 import AuthTabs from "../components/AuthTabs";
@@ -19,7 +20,6 @@ import Navbar from "../components/Navbar";
 import { auth } from "../config/firebase";
 import "../styles/AuthTabs.css";
 import "../styles/Register.css";
-import { createUserWithEmailAndPassword } from "firebase/auth";
 
 function Register() {
   const location = useLocation();
@@ -113,7 +113,7 @@ function Register() {
       sessionStorage.setItem("user_id", response.user.id);
 
       // Navigate to home
-      navigate("/", { replace: true });
+      void navigate("/", { replace: true });
     } catch (err) {
       console.error("Registration error:", err);
 
