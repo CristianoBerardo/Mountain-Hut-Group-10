@@ -10,7 +10,6 @@ export function assertCanAccessReservation(
   // He can only work on his own reservations
   if (role == UserRole.HIKER && hiker_id !== authenticated_user_id) {
     throw new InsufficientPermissionsError(
-      // To be modified
       "Only the hiker who owns this reservation can modify it.",
     );
   }
