@@ -22,7 +22,7 @@ jest.mock("../config/firebaseAdmin", () => ({
 
 jest.mock("../middleware/authenticateToken", () => ({
   authenticateToken: (_req: any, res: any, next: any) => {
-    res.locals.user = { uid: hikerId, role: "HIKER" };
+    res.locals.user = { uid: "test-uid", role: "HIKER" };
     next();
   },
 }));
@@ -117,7 +117,6 @@ const allergenGroups: ReservationAllergensDTO[] = [
 function configureAvailableSlotAndTables(
   tables: AvailableTable[] = [availableTable],
 ) {
-  poolQuery.mockResolvedValue({ rows: [hikerRow] } as never);
   clientQuery.mockImplementation(
     async (sql: string, params: unknown[] = []) => {
       if (sql.includes("FROM meal_slot")) {
@@ -148,6 +147,20 @@ function configureReservationUpdate({
   preferences?: string | null;
   failAllergenInsert?: boolean;
 } = {}) {
+  // The controller resolves the authenticated user and checks ownership first.
+  poolQuery
+    .mockResolvedValueOnce({ rows: [hikerRow] } as never)
+    .mockResolvedValueOnce({
+      rows: [
+        {
+          ...reservationRow,
+          ...slotTimes,
+          preferences,
+          allergens: groups,
+          tables: [],
+        },
+      ],
+    } as never);
   clientQuery.mockImplementation(
     async (sql: string, params: unknown[] = []) => {
       if (sql.includes("SELECT mr.*")) {
@@ -190,6 +203,13 @@ function configureReservationUpdate({
 
 beforeEach(() => {
   jest.resetAllMocks();
+  // User lookups use pool.query; transactional booking queries use clientQuery.
+  poolQuery.mockImplementation(async (sql: string) => {
+    if (sql.includes('FROM "user"')) {
+      return { rows: [hikerRow] } as never;
+    }
+    throw new Error("Unexpected pool query in reservation test: " + sql);
+  });
   connectSpy.mockImplementation(() =>
     Promise.resolve(client as unknown as PoolClient),
   );
@@ -456,16 +476,18 @@ describe("GET /api/v1/reservations/:id", () => {
       ...reservation,
       tables: [{ dining_table_id: tableId, seats_assigned: 3 }],
     };
-    poolQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          ...reservationRow,
-          ...slotTimes,
-          allergens: [],
-          tables: reservationDetails.tables,
-        },
-      ],
-    } as never);
+    poolQuery
+      .mockResolvedValueOnce({ rows: [hikerRow] } as never)
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            ...reservationRow,
+            ...slotTimes,
+            allergens: [],
+            tables: reservationDetails.tables,
+          },
+        ],
+      } as never);
 
     const response = await request(app).get(
       `/api/v1/reservations/${reservation.id}`,
@@ -480,7 +502,9 @@ describe("GET /api/v1/reservations/:id", () => {
   });
 
   it("returns 404 when the reservation does not exist", async () => {
-    poolQuery.mockResolvedValueOnce({ rows: [] } as never);
+    poolQuery
+      .mockResolvedValueOnce({ rows: [hikerRow] } as never)
+      .mockResolvedValueOnce({ rows: [] } as never);
 
     const response = await request(app).get(
       `/api/v1/reservations/${reservation.id}`,
@@ -645,6 +669,7 @@ describe("Reservation dietary requirements", () => {
 
         expect(response.status).toBe(400);
         expect(response.body.code).toBe("INVALID_REQUEST");
+        expect(poolQuery).not.toHaveBeenCalled();
         expect(connectSpy).not.toHaveBeenCalled();
         expect(clientQuery).not.toHaveBeenCalled();
       },
@@ -654,6 +679,9 @@ describe("Reservation dietary requirements", () => {
   it.each(["list", "detail"] as const)(
     "returns allergen groups and preferences in the reservation %s",
     async (view) => {
+      if (view === "detail") {
+        poolQuery.mockResolvedValueOnce({ rows: [hikerRow] } as never);
+      }
       poolQuery.mockResolvedValueOnce({
         rows: [
           {
@@ -848,4 +876,47 @@ describe("Reservation dietary requirements", () => {
     expect(clientQuery).not.toHaveBeenCalledWith("COMMIT");
     expect(release).toHaveBeenCalledTimes(1);
   });
+});
+
+describe("Reservation ownership", () => {
+  it.each(["POST", "GET", "PATCH", "DELETE"] as const)(
+    "rejects %s for another hiker before changing a reservation or sending email",
+    async (method) => {
+      const otherHikerId = "dddddddd-0001-0001-0001-000000000001";
+      poolQuery
+        .mockResolvedValueOnce({ rows: [hikerRow] } as never)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              ...reservationRow,
+              ...slotTimes,
+              hiker_id: otherHikerId,
+              allergens: [],
+              tables: [],
+            },
+          ],
+        } as never);
+
+      const path = "/api/v1/reservations/" + reservation.id;
+      const response = await (method === "POST"
+        ? request(app)
+            .post("/api/v1/reservations")
+            .send({ ...validRequest, hiker_id: otherHikerId })
+        : method === "GET"
+          ? request(app).get(path)
+          : method === "PATCH"
+            ? request(app).patch(path).send({ party_size: 4 })
+            : request(app).delete(path));
+
+      expect(response.status).toBe(403);
+      expect(response.body.code).toBe("INSUFFICIENT_PERMISSIONS");
+      expect(poolQuery).toHaveBeenCalledWith(
+        expect.stringContaining("WHERE firebase_uid = $1"),
+        [hikerRow.firebase_uid],
+      );
+      expect(connectSpy).not.toHaveBeenCalled();
+      expect(clientQuery).not.toHaveBeenCalled();
+      expect(sendReservationConfirmation).not.toHaveBeenCalled();
+    },
+  );
 });

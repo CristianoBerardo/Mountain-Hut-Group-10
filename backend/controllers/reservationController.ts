@@ -3,6 +3,7 @@ import { ReservationRepository } from "../repository/ReservationRepository";
 import { UserRepository } from "../repository/UserRepository";
 import { sendReservationConfirmation } from "../services/emailService";
 import { UserRole } from "../types/UserRole";
+import { assertCanAccessReservation } from "../utils/authorization";
 import {
   optionalString,
   positiveInteger,
@@ -43,7 +44,13 @@ export class ReservationController {
   ): Promise<void> {
     try {
       const id = requiredString(req.params.id, "id");
+      const user = await this.userRepository.getUserByFirebaseUid({
+        firebase_uid: res.locals.user.uid,
+      });
       const result = await this.reservationRepository.getReservationById(id);
+      // check if the reservation can be accessed from the logged in user
+      assertCanAccessReservation(result.hiker_id, user.id, user.role);
+
       res.status(200).json(result);
     } catch (error) {
       // Preserve typed errors for the shared HTTP error handler.
@@ -67,6 +74,14 @@ export class ReservationController {
         allergens: reservationAllergens(body.allergens, partySize),
         preferences: optionalString(body.preferences, "preferences"),
       };
+
+      // check if the reservation can be accessed from the logged in user
+      const user = await this.userRepository.getUserByFirebaseUid({
+        firebase_uid: res.locals.user.uid,
+      });
+
+      assertCanAccessReservation(input.hiker_id, user.id, user.role);
+
       const result = await this.reservationRepository.createReservation(input);
 
       try {
@@ -118,10 +133,20 @@ export class ReservationController {
       const id = requiredString(req.params.id, "id");
       const body = requestObject(req.body);
       const partySize = positiveInteger(body.party_size, "party_size");
+      const allergens = reservationAllergens(body.allergens, partySize);
+      const preferences = optionalString(body.preferences, "preferences");
+      const user = await this.userRepository.getUserByFirebaseUid({
+        firebase_uid: res.locals.user.uid,
+      });
+      const reservation =
+        await this.reservationRepository.getReservationById(id);
+
+      assertCanAccessReservation(reservation.hiker_id, user.id, user.role);
+
       const result = await this.reservationRepository.updateReservation(id, {
         party_size: partySize,
-        allergens: reservationAllergens(body.allergens, partySize),
-        preferences: optionalString(body.preferences, "preferences"),
+        allergens,
+        preferences,
       });
       res.status(200).json(result);
     } catch (error) {
@@ -138,6 +163,12 @@ export class ReservationController {
   ): Promise<void> {
     try {
       const id = requiredString(req.params.id, "id");
+      const user = await this.userRepository.getUserByFirebaseUid({
+        firebase_uid: res.locals.user.uid,
+      });
+      const reservation =
+        await this.reservationRepository.getReservationById(id);
+      assertCanAccessReservation(reservation.hiker_id, user.id, user.role);
       const result = await this.reservationRepository.deleteReservation(id);
       res.status(200).json(result);
     } catch (error) {

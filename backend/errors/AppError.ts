@@ -28,22 +28,16 @@ export class EmailConfigurationError extends AppError {
 }
 
 export class TokenMissingOrInvalidError extends AppError {
-  constructor() {
-    super(
-      401,
-      "TOKEN_MISSING_INVALID",
-      "Authorization header is missing or invalid",
-    );
+  constructor(
+    description: string = "Authorization header is missing or invalid",
+  ) {
+    super(401, "TOKEN_MISSING_INVALID", description);
   }
 }
 
 export class InsufficientPermissionsError extends AppError {
-  constructor() {
-    super(
-      403,
-      "INSUFFICIENT_PERMISSIONS",
-      "Access denied: insufficient permissions",
-    );
+  constructor(description: string = "Access denied: insufficient permissions") {
+    super(403, "INSUFFICIENT_PERMISSIONS", description);
   }
 }
 
@@ -60,11 +54,9 @@ export class ConflictError extends AppError {
 }
 
 export class InsufficientCapacityError extends AppError {
-  constructor() {
-    super(
-      409,
-      "INSUFFICIENT_CAPACITY",
-      "Not enough seats available for the selected time window.",
-    );
+  constructor(
+    description: string = "Not enough seats available for the selected time window.",
+  ) {
+    super(409, "INSUFFICIENT_CAPACITY", description);
   }
 }
