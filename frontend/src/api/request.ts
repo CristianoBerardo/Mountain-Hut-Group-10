@@ -17,7 +17,20 @@ export async function requestJSON<T>(
     if (token) headers.Authorization = `Bearer ${token}`;
     if (body !== undefined) headers["Content-Type"] = "application/json";
 
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    if (!path.startsWith("/") || path.startsWith("//")) {
+        throw new Error("Invalid API path");
+    }
+
+    const expectedOrigin = import.meta.env.VITE_API_BASE_URL
+        ? new URL(import.meta.env.VITE_API_BASE_URL).origin
+        : window.location.origin;
+        
+    const url = new URL(`${API_BASE_URL}${path}`, window.location.origin);
+
+    if (url.origin !== expectedOrigin || !url.pathname.startsWith("/api/v1/")) {
+        throw new Error("Invalid API request URL");
+    }
+    const response = await fetch(url.toString(), {
         method,
         headers,
         body: body !== undefined ? JSON.stringify(body) : undefined,

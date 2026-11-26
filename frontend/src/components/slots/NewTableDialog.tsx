@@ -102,7 +102,9 @@ function NewTableForm({ tables, onClose, onCreated }: Omit<NewTableDialogProps, 
                         value={tableNumber}
                         onChange={(e) => setTableNumber(e.target.value)}
                         required
-                        autoFocus
+                        // autoFocus Usefull because the cursor is already in the table number field 
+                        // but accessibiliy-wise, it is not the best solution.
+                        // For now we remove it (for sonarqube)
                     />
                 </label>
                 <label>

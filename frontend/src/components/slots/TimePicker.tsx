@@ -53,39 +53,43 @@ function Wheel({ items, value, onChange, label }: WheelProps) {
     const padding = ((VISIBLE_ITEMS - 1) / 2) * ITEM_HEIGHT;
 
     return (
-        <div
-            ref={ref}
-            className="time-wheel"
-            style={{ height: VISIBLE_ITEMS * ITEM_HEIGHT, paddingBlock: padding }}
-            onScroll={handleScroll}
-            tabIndex={0}
-            role="spinbutton"
-            aria-label={label}
-            aria-valuenow={Number(value)}
-            aria-valuetext={value}
-            onKeyDown={(e) => {
-                if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    step(-1);
-                } else if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    step(1);
-                }
+      <div
+        ref={ref}
+        className="time-wheel"
+        style={{ height: VISIBLE_ITEMS * ITEM_HEIGHT, paddingBlock: padding }}
+        onScroll={handleScroll}
+        tabIndex={0}
+        role="spinbutton"
+        aria-label={label}
+        aria-valuenow={Number(value)}
+        aria-valuetext={value}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            step(-1);
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            step(1);
+          }
+        }}
+      >
+        {items.map((item, i) => (
+          <button
+            key={item}
+            type="button"
+            className={`time-wheel-item ${item === value ? "selected" : ""}`}
+            onClick={() => {
+              ref.current?.scrollTo({
+                top: i * ITEM_HEIGHT,
+                behavior: "smooth",
+              });
+              onChange(item);
             }}
-        >
-            {items.map((item, i) => (
-                <div
-                    key={item}
-                    className={`time-wheel-item ${item === value ? "selected" : ""}`}
-                    onClick={() => {
-                        ref.current?.scrollTo({ top: i * ITEM_HEIGHT, behavior: "smooth" });
-                        onChange(item);
-                    }}
-                >
-                    {item}
-                </div>
-            ))}
-        </div>
+          >
+            {item}
+          </button>
+        ))}
+      </div>
     );
 }
 
